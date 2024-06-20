@@ -3,3 +3,4 @@ migrations/*
 *.pem
 __pycache__/*
 *.sqlite3
+management_server/__pycache__/*
