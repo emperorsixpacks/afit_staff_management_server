@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Name of the Python script
-PYTHON_SCRIPT="src.server.run"
+PYTHON_SCRIPT="management_server.server.run"
 
 # Required Python version
 REQUIRED_PYTHON_MINOR_VERSION=11
