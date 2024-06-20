@@ -2,3 +2,4 @@
 migrations/*
 *.pem
 __pycache__/*
+*.sqlite3

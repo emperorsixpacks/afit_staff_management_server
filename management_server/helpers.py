@@ -1,4 +1,10 @@
+import os
 from enum import StrEnum
+
+
+def get_base_url(path):
+    return os.path.dirname(os.path.abspath(path=path))
+
 
 class DBType(StrEnum):
     """
@@ -8,6 +14,4 @@ class DBType(StrEnum):
     SQLITE = "sqlite"
     POSTGRSQL = "postgresql"
     MYSQL = "mysql"
-
-
 

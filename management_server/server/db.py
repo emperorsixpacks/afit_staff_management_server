@@ -5,7 +5,7 @@ from sqlalchemy import event
 from management_server.server.settings import DBSettings
 
 
-database = DBSettings(database_name="dnpsims")
+database = DBSettings(database_name="management_server")
 engine = create_engine(
     url=database.database_url,
     connect_args={"check_same_thread": False},

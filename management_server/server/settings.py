@@ -1,7 +1,8 @@
+import os
 from typing import Dict, Optional, Union
 
 from pydantic_settings import BaseSettings, SettingsConfigDict
-
+from management_server.server.constants import APP_BASE_URL
 from management_server.helpers import DBType
 
 
@@ -46,6 +47,8 @@ class DBSettings(BaseConfig):
 
     @property
     def database_url(self):
+        if not os.path.exists(f"{APP_BASE_URL}/{self.database_name}.sqlite3"):
+            os.makedirs(f"{APP_BASE_URL}", exist_ok=True)
         if self.database_type == DBType.SQLITE:
             return f"{self.database_type}:///{self.database_name}.sqlite3"
         return f"{self.database_type}://{self.database_username}:{self.database_password}@{self.database_hostname}:{self.database_port}/{self.database_name}"

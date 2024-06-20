@@ -1,6 +1,6 @@
 from fastapi import FastAPI
 
-from src.server.settings import AppConfig
+from management_server.server.settings import AppConfig
 
 settings = AppConfig(
     title="Staff Management Server",
