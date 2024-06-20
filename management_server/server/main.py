@@ -15,3 +15,5 @@ server = FastAPI(
     **settings.model_dump(),
     openapi_url="/openapi.json" if settings.debug else None
 )
+
+
