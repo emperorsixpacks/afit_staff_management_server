@@ -1,3 +1,4 @@
 .env
 migrations/*
 *.pem
+__pycache__/*
