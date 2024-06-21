@@ -1,11 +1,10 @@
 from sqlmodel import create_engine
 from sqlmodel.orm.session import Session
-from sqlalchemy import event
 
 from management_server.server.settings import DBSettings
 
 
-database = DBSettings(database_name="management_server")
+database = DBSettings()
 engine = create_engine(
     url=database.database_url,
     connect_args={"check_same_thread": False},
