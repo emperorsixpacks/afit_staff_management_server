@@ -109,5 +109,4 @@ class StaffModel(BaseModel, table=True):
 
 class AdminModel(StaffModel, table=True):
     __tablename__ = "admin"
-
-    staff: StaffModel = Relationship(back_populates="staff")
+    staff: StaffModel = Relationship(back_populates="deapartment_head", sa_relationship_kwargs={"uselist": False})
