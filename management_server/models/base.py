@@ -1,5 +1,7 @@
 from datetime import datetime
-from sqlmodel import SQLModel
+import uuid as uuid_pkg
+
+from sqlmodel import SQLModel, Field
 from pydantic import Field
 
 class BaseModel(SQLModel):
@@ -26,4 +28,6 @@ class BaseModel(SQLModel):
     
 
 class BaseUserModel(BaseModel):
-    pass
+    id: uuid_pkg.UUID = Field(
+        default_factory=uuid_pkg.uuid4, primary_key=True, index=True
+    )
