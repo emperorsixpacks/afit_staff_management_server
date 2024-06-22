@@ -5,7 +5,7 @@ from pydantic import model_validator
 from sqlmodel import Field, Relationship
 from management_server.models.helpers import EmailString
 from management_server.models.validators import phone_number_vaidator
-from management_server.models.base import BaseModel, BaseUserModel
+from management_server.models.base import BaseModel, BaseUserModel, BaseStaffModel
 
 
 class UserModel(BaseUserModel, table=True):
@@ -91,22 +91,14 @@ class DepartmentModel(BaseModel, table=True):
     )
 
 
-class StaffModel(BaseModel, table=True):
+class StaffModel(BaseStaffModel, table=True):
     __tablename__ = "staff"
-    staff_id: str = Field(default=None, primary_key=True, nullable=False, index=True)
-    user_id: str = Field(foreign_key="user.id", nullable=False, unique=True)
-    user: UserModel = Relationship(back_populates="staff")
+   
     deapartment_head: AdminModel = Relationship(
         back_populates="staff", sa_relationship_kwargs={"uselist": False}
     )
     department_head_id: str = Field(
         foreign_key="admin.staff_id", unique=True, nullable=True
-    )
-    department_id: str = Field(
-        unique=True, nullable=False, foreign_key="department.department_id"
-    )
-    department: DepartmentModel = Relationship(
-        back_populates="staff_members", sa_relationship_kwargs={"uselist": False}
     )
 
 
