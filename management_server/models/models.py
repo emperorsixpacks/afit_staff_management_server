@@ -1,9 +1,10 @@
 from __future__ import annotations
-from pydantic import Field, ConfigDict
+from pydantic import Field, ConfigDict, EmailStr
+from email_validator import 
 
 from management_server.models import BaseModel
 
-class User(BaseModel, table=True):
+class UserModel(BaseModel, table=True):
     """
     User model class
     """
@@ -19,8 +20,8 @@ class User(BaseModel, table=True):
     lga: str = Field(default=None, max_length=50, nullable=False)
     ward: str = Field(default=None, max_length=50, nullable=False)
 
-class Staff(BaseModel, table=True):
+class StaffModel(BaseModel, table=True):
     pass
 
-class Admin(BaseModel, table=True):
+class AdminModel(BaseModel, table=True):
     pass
