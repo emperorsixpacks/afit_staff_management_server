@@ -1,1 +1,1 @@
-from management_server.models.base import BaseModel, BaseUserModel
+from management_server.models.models import UserModel, StaffModel, AdminModel, DepartmentModel

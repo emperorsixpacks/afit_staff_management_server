@@ -1,11 +1,11 @@
 from __future__ import annotations
 from typing import Dict
-from pydantic import ConfigDict, model_validator
+from pydantic import model_validator
 
 from sqlmodel import Field, Relationship
 from management_server.models.helpers import EmailString
 from management_server.models.validators import phone_number_vaidator
-from management_server.models import BaseModel, BaseUserModel
+from management_server.models.base import BaseModel, BaseUserModel
 
 
 class UserModel(BaseUserModel, table=True):
@@ -15,9 +15,6 @@ class UserModel(BaseUserModel, table=True):
 
     __tablename__ = "user"
 
-    model_config = ConfigDict(
-        extra="forbid", str_strip_whitespace=True, use_enum_values=True
-    )
     first_name: str = Field(max_length=20, min_length=3, nullable=False)
     last_name: str = Field(max_length=20, min_length=3, nullable=False)
     email: EmailString = Field(
@@ -46,6 +43,7 @@ class UserModel(BaseUserModel, table=True):
 
     @model_validator(mode="before")
     def vaidate_user_model(self, data: Dict):
+        # self.i
         """
         Validates the user model before saving it to the database.
 
@@ -88,7 +86,10 @@ class DepartmentModel(BaseModel, table=True):
     department_head: AdminModel = Relationship(
         back_populates="staff", sa_relationship_kwargs={"uselist": False}
     )
-    department_head_id: AdminModel = Field(unique=True, nullable=False, foreign_key="admin.staff_id")
+    department_head_id: str = Field(
+        unique=True, nullable=False, foreign_key="admin.staff_id"
+    )
+
 
 class StaffModel(BaseModel, table=True):
     __tablename__ = "staff"
@@ -101,7 +102,9 @@ class StaffModel(BaseModel, table=True):
     department_head_id: str = Field(
         foreign_key="admin.staff_id", unique=True, nullable=True
     )
-    department_id: str = Field(unique=True, nullable=False, foreign_key="department.department_id")
+    department_id: str = Field(
+        unique=True, nullable=False, foreign_key="department.department_id"
+    )
     department: DepartmentModel = Relationship(
         back_populates="staff_members", sa_relationship_kwargs={"uselist": False}
     )
@@ -109,4 +112,6 @@ class StaffModel(BaseModel, table=True):
 
 class AdminModel(StaffModel, table=True):
     __tablename__ = "admin"
-    staff: StaffModel = Relationship(back_populates="deapartment_head", sa_relationship_kwargs={"uselist": False})
+    staff: StaffModel = Relationship(
+        back_populates="deapartment_head", sa_relationship_kwargs={"uselist": False}
+    )
