@@ -1,0 +1,1 @@
+from management_server.models.base import BaseModel
