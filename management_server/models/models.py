@@ -13,6 +13,8 @@ class UserModel(BaseUserModel, table=True):
     User model class
     """
 
+    __tablename__ = "user"
+
     model_config = ConfigDict(
         extra="forbid", str_strip_whitespace=True, use_enum_values=True
     )
@@ -28,6 +30,9 @@ class UserModel(BaseUserModel, table=True):
     state: str = Field(default=None, max_length=50, nullable=False)
     lga: str = Field(default=None, max_length=50, nullable=False)
     ward: str = Field(default=None, max_length=50, nullable=False)
+    staff: StaffModel = Relationship(
+        back_populates="user", sa_relationship_kwargs={"uselist": False}
+    )
 
     @property
     def full_name(self):
@@ -72,21 +77,30 @@ class UserModel(BaseUserModel, table=True):
 
 
 class DepartmentModel(BaseModel, table=True):
+    __tablename__ = "department"
     department_id: str = Field(
         default=None, primary_key=True, nullable=False, index=True
     )
     name: str = Field(max_length=20, min_length=3, nullable=False, unique=True)
     short_name: str = Field(max_length=3, min_length=3, nullable=False, unique=True)
-    description: str
+    description: str = Field(max_length=250, min_length=10, nullable=True)
     department_head: str
 
 
 class StaffModel(BaseModel, table=True):
+    __tablename__ = "staff"
     staff_id: str = Field(default=None, primary_key=True, nullable=False, index=True)
-    user_id: str
-    deapartment_head: str
-    department_id: str
+    user_id: str = Field(foreign_key="user.id", nullable=False, unique=True)
+    user: UserModel = Relationship(back_populates="staff")
+    deapartment_head: AdminModel = Relationship(
+        back_populates="staff_members", sa_relationship_kwargs={"uselist": False}
+    )
+    department_head_id: str = Field(
+        foreign_key="admin.staff_id", unique=True, nullable=True
+    )
 
 
 class AdminModel(StaffModel, table=True):
-    pass
+    __tablename__ = "admin"
+
+    staff_members: StaffModel = Relationship(back_populates="staff")
