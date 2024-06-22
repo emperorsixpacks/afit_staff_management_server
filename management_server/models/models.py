@@ -2,7 +2,7 @@ from __future__ import annotations
 from typing import Dict
 from pydantic import ConfigDict, model_validator
 
-from sqlmodel import Field
+from sqlmodel import Field, Relationship
 from management_server.models.helpers import EmailString
 from management_server.models.validators import phone_number_vaidator
 from management_server.models import BaseModel, BaseUserModel
@@ -41,6 +41,23 @@ class UserModel(BaseUserModel, table=True):
 
     @model_validator(mode="before")
     def vaidate_user_model(self, data: Dict):
+        """
+        Validates the user model before saving it to the database.
+
+        This function is a model validator that is called before saving the user model to the database.
+        It performs the following checks:
+        - Checks if the 'phone_number' field is empty and raises an assertion error if it is.
+        - Checks if the 'mobile_network' field is empty and raises an assertion error if it is.
+        - Validates the 'phone_number' field using the 'phone_number_vaidator' function and assigns the result to the 'validate' variable.
+        - If the 'validate' variable is None, it raises an error (TODO).
+        - Updates the 'mobile_network' field in the data dictionary with the value from the 'validate.network' attribute.
+
+        Parameters:
+            data (Dict): The data dictionary containing the user model data.
+
+        Returns:
+            Dict: The updated data dictionary with the 'mobile_network' field updated.
+        """
         user_phone_number = self.get("phone_numeber", None)
         mobile_network = self.get("mobile_network", None)
         assert user_phone_number is None, "Field phone_numeber is empty"
@@ -54,9 +71,22 @@ class UserModel(BaseUserModel, table=True):
         return data.update(("mobile_network", validate.network))
 
 
+class DepartmentModel(BaseModel, table=True):
+    department_id: str = Field(
+        default=None, primary_key=True, nullable=False, index=True
+    )
+    name: str = Field(max_length=20, min_length=3, nullable=False, unique=True)
+    short_name: str = Field(max_length=3, min_length=3, nullable=False, unique=True)
+    description: str
+    department_head: str
+
+
 class StaffModel(BaseModel, table=True):
-    pass
+    staff_id: str = Field(default=None, primary_key=True, nullable=False, index=True)
+    user_id: str
+    deapartment_head: str
+    department_id: str
 
 
-class AdminModel(BaseModel, table=True):
+class AdminModel(StaffModel, table=True):
     pass
