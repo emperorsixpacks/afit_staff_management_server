@@ -23,3 +23,7 @@ class BaseModel(SQLModel):
             datetime.time: The time at which the object was created.
         """
         return self.created_at.time()
+    
+
+class BaseUserModel(BaseModel):
+    pass

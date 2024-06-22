@@ -1,1 +1,1 @@
-from management_server.models.base import BaseModel
+from management_server.models.base import BaseModel, BaseUserModel

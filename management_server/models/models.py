@@ -5,10 +5,10 @@ from pydantic import ConfigDict, model_validator
 from sqlmodel import Field
 from management_server.models.helpers import EmailString
 from management_server.models.validators import phone_number_vaidator
-from management_server.models import BaseModel
+from management_server.models import BaseModel, BaseUserModel
 
 
-class UserModel(BaseModel, table=True):
+class UserModel(BaseUserModel, table=True):
     """
     User model class
     """
