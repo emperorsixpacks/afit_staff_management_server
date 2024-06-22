@@ -1,8 +1,12 @@
 from __future__ import annotations
-from pydantic import Field, ConfigDict, field_validator
+from typing import Dict
+from pydantic import ConfigDict, model_validator
 
+from sqlmodel import Field
 from management_server.models.helpers import EmailString
+from management_server.models.validators import phone_number_vaidator
 from management_server.models import BaseModel
+
 
 class UserModel(BaseModel, table=True):
     """
@@ -14,8 +18,13 @@ class UserModel(BaseModel, table=True):
     )
     first_name: str = Field(max_length=20, min_length=3, nullable=False)
     last_name: str = Field(max_length=20, min_length=3, nullable=False)
-    email: EmailString = Field(unique=True, nullable=False, max_length=255, min_length=15)
+    email: EmailString = Field(
+        unique=True, nullable=False, max_length=255, min_length=15
+    )
     phone_number: str = Field(unique=True, nullable=False, min_length=11, max_length=11)
+    mobile_network: str = Field(
+        nullable=False, min_length=4, max_length=15, default=None
+    )
     state: str = Field(default=None, max_length=50, nullable=False)
     lga: str = Field(default=None, max_length=50, nullable=False)
     ward: str = Field(default=None, max_length=50, nullable=False)
@@ -30,40 +39,24 @@ class UserModel(BaseModel, table=True):
         """
         return f"{self.first_name} {self.last_name}"
 
-    @field_validator("phone_number")
-    @classmethod
-    def check_phone_number(cls, value):
-        """
-        Check if the given phone number is valid.
+    @model_validator(mode="before")
+    def vaidate_user_model(self, data: Dict):
+        user_phone_number = self.get("phone_numeber", None)
+        mobile_network = self.get("mobile_network", None)
+        assert user_phone_number is None, "Field phone_numeber is empty"
 
-        Parameters:
-            value (str): The phone number to be checked.
+        assert mobile_network is None, "Field mobile_network is empty"
 
-        Returns:
-            str: The input phone number if it is valid.
+        validate = phone_number_vaidator(phone_number=user_phone_number)
+        if validate is None:
+            # TODO raise an error here
+            pass
+        return data.update(("mobile_network", validate.network))
 
-        Raises:
-            InvalidRequestError: If the phone number is invalid.
-
-        Note:
-            This function validates the phone number by checking if its first four or five digits match any of the mobile prefixes in the system. If the phone number is not valid, an InvalidRequestError with status code 406 (Not Acceptable) and detail message "Invalid Phone Number" is raised.
-        """
-        first_four_digites = value[:4]
-        first_five_digits = value[:5]
-        prefixes = [
-            prefix
-            for prefixes in get_mobile_prefixes().mobile_prefixes
-            for prefix in prefixes.prefixes
-        ]
-        if not (first_four_digites in prefixes or first_five_digits in prefixes):
-            raise InvalidRequestError(
-                status_code=status.HTTP_406_NOT_ACCEPTABLE,
-                detail="Invalid Phone Number",
-            )
-        return value
 
 class StaffModel(BaseModel, table=True):
     pass
+
 
 class AdminModel(BaseModel, table=True):
     pass
