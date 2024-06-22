@@ -84,7 +84,7 @@ class DepartmentModel(BaseModel, table=True):
     name: str = Field(max_length=20, min_length=3, nullable=False, unique=True)
     short_name: str = Field(max_length=3, min_length=3, nullable=False, unique=True)
     description: str = Field(max_length=250, min_length=10, nullable=True)
-    department_head: str
+    staff_members: StaffModel = Relationship(back_populates="department")
 
 
 class StaffModel(BaseModel, table=True):
@@ -97,6 +97,10 @@ class StaffModel(BaseModel, table=True):
     )
     department_head_id: str = Field(
         foreign_key="admin.staff_id", unique=True, nullable=True
+    )
+    department_id: str = Field(unique=True, nullable=False, foreign_key="department.department_id")
+    department: DepartmentModel = Relationship(
+        back_populates="staff_members", sa_relationship_kwargs={"uselist": False}
     )
 
 
