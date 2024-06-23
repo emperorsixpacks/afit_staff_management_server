@@ -84,7 +84,7 @@ class DepartmentModel(BaseModel, table=True):
     description: str = Field(max_length=250, min_length=10, nullable=True)
     staff_members: StaffModel = Relationship(back_populates="department")
     department_head: AdminModel = Relationship(
-        back_populates="staff", sa_relationship_kwargs={"uselist": False}
+        back_populates="admin", sa_relationship_kwargs={"uselist": False}
     )
     department_head_id: str = Field(
         unique=True, nullable=False, foreign_key="admin.staff_id"
@@ -102,26 +102,15 @@ class StaffModel(BaseStaffModel, table=True):
     department: DepartmentModel = Relationship(
         back_populates="staff_members", sa_relationship_kwargs={"uselist": False}
     )
-   
-    deapartment_head: AdminModel = Relationship(
-        back_populates="staff", sa_relationship_kwargs={"uselist": False}
-    )
-    department_head_id: str = Field(
-        foreign_key="admin.staff_id", unique=True, nullable=True
-    )
+    department_head_id: str = Field(foreign_key="admin.id", unique=True, nullable=True)
+    admin: AdminModel = Relationship(back_populates="staff")
 
 
 class AdminModel(BaseStaffModel, table=True):
     __tablename__ = "admin"
-    staff_id: str = Field(default=None, primary_key=True, nullable=False, index=True)
-    user_id: str = Field(foreign_key="user.id", nullable=False, unique=True)
-    user: UserModel = Relationship(back_populates="staff")
-    department_id: str = Field(
-        unique=True, nullable=False, foreign_key="department.department_id"
-    )
-    department: DepartmentModel = Relationship(
-        back_populates="staff_members", sa_relationship_kwargs={"uselist": False}
-    )
+    id: str = Field(default=None, primary_key=True, nullable=False, index=True)
+    staff_id: str = Field(foreign_key="staff.staff_id", nullable=False, unique=True)
     staff: StaffModel = Relationship(
-        back_populates="deapartment_head", sa_relationship_kwargs={"uselist": False}
+        back_populates="admin",
+        sa_relationship_kwargs={"uselist": False},
     )
