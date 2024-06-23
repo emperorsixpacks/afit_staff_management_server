@@ -93,6 +93,15 @@ class DepartmentModel(BaseModel, table=True):
 
 class StaffModel(BaseStaffModel, table=True):
     __tablename__ = "staff"
+    staff_id: str = Field(default=None, primary_key=True, nullable=False, index=True)
+    user_id: str = Field(foreign_key="user.id", nullable=False, unique=True)
+    user: UserModel = Relationship(back_populates="staff")
+    department_id: str = Field(
+        unique=True, nullable=False, foreign_key="department.department_id"
+    )
+    department: DepartmentModel = Relationship(
+        back_populates="staff_members", sa_relationship_kwargs={"uselist": False}
+    )
    
     deapartment_head: AdminModel = Relationship(
         back_populates="staff", sa_relationship_kwargs={"uselist": False}
@@ -102,8 +111,17 @@ class StaffModel(BaseStaffModel, table=True):
     )
 
 
-class AdminModel(StaffModel, table=True):
+class AdminModel(BaseStaffModel, table=True):
     __tablename__ = "admin"
+    staff_id: str = Field(default=None, primary_key=True, nullable=False, index=True)
+    user_id: str = Field(foreign_key="user.id", nullable=False, unique=True)
+    user: UserModel = Relationship(back_populates="staff")
+    department_id: str = Field(
+        unique=True, nullable=False, foreign_key="department.department_id"
+    )
+    department: DepartmentModel = Relationship(
+        back_populates="staff_members", sa_relationship_kwargs={"uselist": False}
+    )
     staff: StaffModel = Relationship(
         back_populates="deapartment_head", sa_relationship_kwargs={"uselist": False}
     )

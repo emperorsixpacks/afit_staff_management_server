@@ -5,7 +5,6 @@ from typing import TYPE_CHECKING
 
 from sqlmodel import SQLModel, Field, Relationship
 from pydantic import ConfigDict
-
 if TYPE_CHECKING:
     from management_server.models import UserModel, AdminModel, DepartmentModel
 
@@ -44,12 +43,8 @@ class BaseUserModel(BaseModel):
 
 
 class BaseStaffModel(BaseModel):
-    staff_id: str = Field(default=None, primary_key=True, nullable=False, index=True)
-    user_id: str = Field(foreign_key="user.id", nullable=False, unique=True)
-    user: UserModel = Relationship(back_populates="staff")
-    department_id: str = Field(
-        unique=True, nullable=False, foreign_key="department.department_id"
-    )
-    department: DepartmentModel = Relationship(
-        back_populates="staff_members", sa_relationship_kwargs={"uselist": False}
-    )
+    pass
+
+
+
+# TODO ValueError: <class 'management_server.models.models.DepartmentModel'> has no matching SQLAlchemy type
