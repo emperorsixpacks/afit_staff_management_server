@@ -4,7 +4,7 @@ from typing import TypeVar, Generic
 import uuid as uuid_pkg
 from dataclasses import dataclass
 
-from sqlmodel import SQLModel, Field
+from sqlmodel import SQLModel, Field, select
 from sqlmodel.orm.session import Session
 from pydantic import ConfigDict
 
@@ -16,8 +16,18 @@ T = TypeVar("T")
 class BaseManager(Generic[T]):
     model: T
     session: Session = Field(default_factory=get_session)
-    def get(self, key, default=None) -> T | None:
-        pass
+    def get_one_or_none(self, key, value, default=None) -> T | None:
+        statement = select(self.model).where(key == key)
+        result = self._run(statement).one_or_none()
+        return result
+
+    def _run(self, *args, **kwargs):
+        try:
+            with self.session.begin():
+                return self.session.exec(*args, **kwargs)
+        except Exception as e:
+            self.session.rollback()
+            raise e
         
 
 class BaseModel(SQLModel):
