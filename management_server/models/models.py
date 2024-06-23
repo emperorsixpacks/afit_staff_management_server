@@ -1,12 +1,26 @@
 from __future__ import annotations
 from typing import Dict
+from random import randint
 from pydantic import model_validator
+
 
 from sqlmodel import Field, Relationship
 from management_server.models.helpers import EmailString
 from management_server.models.validators import phone_number_vaidator
 from management_server.models.base import BaseModel, BaseUserModel, BaseStaffModel
 
+def generate_staff_id(dept):
+    """
+    Generate a unique staff ID by combining the department abbreviation and a randomly generated user number.
+
+    Parameters:
+        dept (str): The department abbreviation.
+
+    Returns:
+        str: The generated staff ID in the format "AFIT{dept}{user_number}".
+    """
+    user_number = randint(1000, 9999)
+    return f"AFIT{dept}{user_number}"
 
 class UserModel(BaseUserModel, table=True):
     """
@@ -105,6 +119,9 @@ class StaffModel(BaseStaffModel, table=True):
     department_head_id: str = Field(foreign_key="admin.id", unique=True, nullable=True)
     admin: AdminModel = Relationship(back_populates="staff")
 
+    @field.validator("staff_id", mode="before")
+    def generate_staff_id(cls, value: str, /) -> str:
+        return generate_staff_id(value[0:3])
 
 class AdminModel(BaseStaffModel, table=True):
     __tablename__ = "admin"

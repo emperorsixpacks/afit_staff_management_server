@@ -1,12 +1,24 @@
 from __future__ import annotations
 from datetime import datetime
+from typing import TypeVar, Generic
 import uuid as uuid_pkg
-from typing import TYPE_CHECKING
+from dataclasses import dataclass
 
-from sqlmodel import SQLModel, Field, Relationship
+from sqlmodel import SQLModel, Field
+from sqlmodel.orm.session import Session
 from pydantic import ConfigDict
-if TYPE_CHECKING:
-    from management_server.models import UserModel, AdminModel, DepartmentModel
+
+from management_server.server.db import get_session
+
+T = TypeVar("T")
+
+@dataclass
+class BaseManager(Generic[T]):
+    model: T
+    session: Session = Field(default_factory=get_session)
+    def get(self, key, default=None) -> T | None:
+        pass
+        
 
 class BaseModel(SQLModel):
     model_config = ConfigDict(str_strip_whitespace=True, use_enum_values=True, arbitrary_types_allowed=True)
@@ -33,7 +45,10 @@ class BaseModel(SQLModel):
             datetime.time: The time at which the object was created.
         """
         return self.created_at.time()
-
+    
+    @classmethod
+    def objects(cls) -> T:
+        return BaseManager(model=cls)
 
 class BaseUserModel(BaseModel):
     model_config = ConfigDict(str_strip_whitespace=True, use_enum_values=True, arbitrary_types_allowed=True)
