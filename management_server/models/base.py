@@ -17,7 +17,18 @@ class BaseManager(Generic[T]):
     model: T
     session: Session = Field(default_factory=get_session)
     def get_one_or_none(self, key, value, default=None) -> T | None:
-        statement = select(self.model).where(key == key)
+        """
+        Retrieves a single record from the database based on the given key-value pair.
+
+        Parameters:
+            key (Any): The key to search for in the database.
+            value (Any): The value to search for in the database.
+            default (Any, optional): The default value to return if no record is found. Defaults to None.
+
+        Returns:
+            T | None: The record found in the database, or the default value if no record is found.
+        """
+        statement = select(self.model).where(key == value)
         result = self._run(statement).one_or_none()
         return result
 
