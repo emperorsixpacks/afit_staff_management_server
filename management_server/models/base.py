@@ -16,7 +16,7 @@ T = TypeVar("T")
 class BaseManager(Generic[T]):
     model: T
     session: Session = Field(default_factory=get_session)
-    def get_one_or_none(self, key, value, default=None) -> T | None:
+    def get_one_or_none(self, default=None, **kwargs) -> T | None:
         """
         Retrieves a single record from the database based on the given key-value pair.
 
@@ -28,6 +28,8 @@ class BaseManager(Generic[T]):
         Returns:
             T | None: The record found in the database, or the default value if no record is found.
         """
+        key = kwargs.items()[0][0]
+        value = kwargs.get(key, None)
         statement = select(self.model).where(key == value)
         result = self._run(statement).one_or_none()
         return result
@@ -68,7 +70,7 @@ class BaseModel(SQLModel):
         return self.created_at.time()
     
     @classmethod
-    def objects(cls) -> T:
+    def objects(cls) -> BaseManager:
         return BaseManager(model=cls)
 
 class BaseUserModel(BaseModel):

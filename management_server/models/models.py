@@ -119,9 +119,10 @@ class StaffModel(BaseStaffModel, table=True):
     department_head_id: str = Field(foreign_key="admin.id", unique=True, nullable=True)
     admin: AdminModel = Relationship(back_populates="staff")
 
-    @field.validator("staff_id", mode="before")
-    def generate_staff_id(cls, value: str, /) -> str:
-        return generate_staff_id(value[0:3])
+    @model_validator(mode="before")
+    def vlidate_staff_model(self, data: Dict):
+        department_id = data.get("department_id", None)
+        department_id = DepartmentModel.objects().get_one_or_none(key="department_id", value=department_id) 
 
 class AdminModel(BaseStaffModel, table=True):
     __tablename__ = "admin"
