@@ -1,10 +1,9 @@
 from __future__ import annotations
-from typing import Dict
+from typing import Dict, ClassVar
 from random import randint
 from pydantic import model_validator
 
-
-from sqlmodel import Field, Relationship
+from sqlmodel import Field, Relationship, Column, String, ForeignKey
 from management_server.models.helpers import EmailString
 from management_server.models.validators import phone_number_vaidator
 from management_server.models.base import BaseModel, BaseUserModel, BaseStaffModel
@@ -42,7 +41,7 @@ class UserModel(BaseUserModel, table=True):
     lga: str = Field(default=None, max_length=50, nullable=False)
     ward: str = Field(default=None, max_length=50, nullable=False)
     staff: StaffModel = Relationship(
-        back_populates="user", sa_relationship_kwargs={"uselist": False}
+        back_populates="user"
     )
 
     @property
@@ -97,9 +96,6 @@ class DepartmentModel(BaseModel, table=True):
     short_name: str = Field(max_length=3, min_length=3, nullable=False, unique=True)
     description: str = Field(max_length=250, min_length=10, nullable=True)
     staff_members: StaffModel = Relationship(back_populates="department")
-    department_head: AdminModel = Relationship(
-        back_populates="admin", sa_relationship_kwargs={"uselist": False}
-    )
     department_head_id: str = Field(
         unique=True, nullable=False, foreign_key="admin.staff_id"
     )
@@ -108,21 +104,24 @@ class DepartmentModel(BaseModel, table=True):
 class StaffModel(BaseStaffModel, table=True):
     __tablename__ = "staff"
     staff_id: str = Field(default=None, primary_key=True, nullable=False, index=True)
-    user_id: str = Field(foreign_key="user.id", nullable=False, unique=True)
-    user: UserModel = Relationship(back_populates="staff")
-    department_id: str = Field(
-        unique=True, nullable=False, foreign_key="department.department_id"
-    )
+    user_id: ClassVar = Column(String, ForeignKey('user.id'), unique=True, nullable=False)
+    user: UserModel = Relationship(back_populates="staff", sa_relationship_kwargs={"uselist": False, "foreign_keys":[user_id]})
+    department_id: ClassVar = Column(String, ForeignKey('department.department_id'), unique=True, nullable=False)
     department: DepartmentModel = Relationship(
-        back_populates="staff_members", sa_relationship_kwargs={"uselist": False}
+        back_populates="staff_members", sa_relationship_kwargs={"uselist": False, "foreign_keys":[department_id]}
     )
-    department_head_id: str = Field(foreign_key="admin.id", unique=True, nullable=True)
     admin: AdminModel = Relationship(back_populates="staff")
 
     @model_validator(mode="before")
-    def vlidate_staff_model(self, data: Dict):
+    def validate_staff_model(self, data: Dict):
         department_id = data.get("department_id", None)
-        department_id = DepartmentModel.objects().get_one_or_none(key="department_id", value=department_id) 
+        department = DepartmentModel.objects().get_one_or_none(department_id=department_id)
+        assert department_id is not None, "Department does not exist"
+        data.update(
+            ("staff_id", generate_staff_id(dept=department.short_name))
+        )
+        return data
+        
 
 class AdminModel(BaseStaffModel, table=True):
     __tablename__ = "admin"
