@@ -3,8 +3,6 @@ from typing import TypeVar
 
 from tortoise import fields
 from tortoise.models import Model as BaseModel
-from management_server.models.helpers import EmailString
-from management_server.models.validators import phone_number_vaidator
 from management_server.models.helpers import hash_password, generate_staff_id
 
 MODEL = TypeVar("MODEL")
@@ -131,5 +129,3 @@ class Admin(TimestampMixin, BaseModel):
         ordering = ["name", "short_name"]
 
 
-
-# TODO check the create command on the usermodel
