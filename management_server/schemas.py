@@ -1,12 +1,16 @@
+from __future__ import annotations
+from uuid import UUID
 from datetime import datetime
 from pydantic import BaseModel
+
 
 class BaseSchema(BaseModel):
     created_at: datetime
     updated_at: datetime
 
+
 class UserSchema(BaseSchema):
-    user_id: str
+    user_id: UUID
     first_name: str
     last_name: str
     email: str
@@ -18,6 +22,14 @@ class UserSchema(BaseSchema):
     password_hash: str
 
 
+class DepartmentSchema(BaseSchema):
+    department_id: UUID
+    name: str
+    short_name: str
+    description: str
+    department_head: AdminShema
+
+
 class BaseStaffSchema(BaseSchema):
     staff_id: str
     user: UserSchema
@@ -25,6 +37,7 @@ class BaseStaffSchema(BaseSchema):
 
 class StaffSchema(BaseStaffSchema):
     department: str
+
 
 class AdminShema(BaseSchema):
     username: str
