@@ -10,10 +10,10 @@ package-mode = false
 python = "^3.11"
 fastapi = "^0.111.0"
 redis = "^5.0.6"
-alembic = "^1.13.1"
-sqlmodel = "^0.0.19"
 pydantic-settings = "^2.3.3"
 pydantic = {extras = ["email"], version = "^2.7.4"}
+tortoise-orm = {extras = ["aiosqlite"], version = "^0.21.3"}
+aerich = "^0.7.2"
 
 
 [build-system]

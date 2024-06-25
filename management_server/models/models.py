@@ -29,12 +29,12 @@ class UserModel(TimestampMixin, BaseModel):
     state = fields.CharField(max_length=20, min_length=3, null=False)
     lga = fields.CharField(max_length=20, min_length=3, null=False)
     ward = fields.CharField(max_length=20, min_length=3, null=False)
-    password = fields.CharField(max_length=500, null=False)
+    password_hash = fields.CharField(max_length=500, null=False)
     staff = fields.OneToOneRelation(model_name="staff", related_name="user")
 
     class Meta:
         table = "user"
-        ordering = ["state", "lga", "ward"]
+        ordering = ["state", "lga", "ward", "created_at"]
 
     @property
     def full_name(self):
@@ -60,43 +60,45 @@ class UserModel(TimestampMixin, BaseModel):
         Returns:
             The newly created instance.
         """
-        password = kwargs.get("password", None)
+        password = kwargs.get("password_hash", None)
         if password is None:
             raise ValueError("Password must be set")
         instance = cls(**kwargs)
-        instance.password = hash_password(password)
+        instance.password_hash = hash_password(password)
         await instance.save()
         return instance
 
 
-class DepartmentModel(BaseModel):
-    __tablename__ = "department"
+class DepartmentModel(TimestampMixin, BaseModel):
+
     department_id = fields.UUIDField(primary_key=True)
     name = fields.CharField(max_length=20, min_length=3, null=False, unique=True)
     short_name = fields.CharField(max_length=3, min_length=3, null=False, unique=True)
     description = fields.TextField(null=False, max_length=255)
-    # staffs = fields
+    department_head = fields.ForeignKeyField(model_name="admin", on_delete=fields.SET_NULL, null=True)
 
     class Meta:
         table = "name"
         ordering = ["name", "short_name"]
 
 
-class StaffModel(BaseModel):
+class StaffModel(TimestampMixin, BaseModel):
     staff_id = fields.CharField(max_length=13, primary_key=True)
     user = fields.OneToOneField(model_name="user", related_name="staff")
     admin = fields.OneToOneNullableRelation(model_name="admin", related_name="staff")
     department_head = fields.ForeignKeyField(
         model_name="admin", on_delete=fields.NO_ACTION
     )
+    department = fields.ForeignKeyField(model_name="department", on_delete=fields.SET_NULL, null=True)
 
     class Meta:
         table = "staff"
-        ordering = ["name", "short_name"]
+        ordering = ["staff_id"]
 
 
-class Admin(BaseModel):
-    staff = fields.OneToOneField(model_name="staff", related_name="admin")
+class Admin(TimestampMixin, BaseModel):
+    id = fields.UUIDField(primary_key=True)
+    staff = fields.OneToOneField(model_name="staff", related_name="admin", on_delete=fields.CASCADE)
 
     class Meta:
         table = "admin"
