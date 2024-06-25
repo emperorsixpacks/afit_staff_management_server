@@ -5,5 +5,5 @@ __pycache__/*
 *.sqlite3
 *.pyc
 demo.py
-extras/tortoise.yml
 poetry.lock
+tortoise.yml

@@ -1,6 +1,11 @@
-from fastapi import FastAPI
+from contextlib import asynccontextmanager
+from typing import AsyncGenerator
 
-from management_server.server.settings import AppConfig
+from fastapi import FastAPI
+from tortoise.contrib.fastapi import RegisterTortoise
+from management_server.server.settings import AppConfig, DBSettings
+
+db_settings = DBSettings()
 
 settings = AppConfig(
     title="Staff Management Server",
@@ -11,9 +16,19 @@ settings = AppConfig(
     }
 )
 
+@asynccontextmanager
+async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
+    # app startup
+    async with RegisterTortoise(
+        app,
+        config_file=db_settings.tortoise_config
+    ):
+        yield
+
 server = FastAPI(
     **settings.model_dump(),
-    openapi_url="/openapi.json" if settings.debug else None
+    openapi_url="/openapi.json" if settings.debug else None,
+    lifespan=lifespan
 )
 
 

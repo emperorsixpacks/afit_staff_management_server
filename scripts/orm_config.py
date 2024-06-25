@@ -10,7 +10,7 @@ db_settings = DBSettings()
 ENV_LOCATION = os.path.join(APP_BASE_URL, ".env")
 
 if db_settings.tortoise_config is None:
-    CONFIG_FILE = os.path.join(APP_BASE_URL, "extras/tortoise.yml")
+    CONFIG_FILE = os.path.join(APP_BASE_URL, "tortoise.yml")
 else:
     CONFIG_FILE = db_settings.tortoise_config
 
@@ -20,7 +20,7 @@ DEFAULT_CONFIG = {
     },
     "apps": {
         "models": {
-            "models": ["management_server.models",  "aerich.models"],
+            "models": ["management_server.models.models",  "aerich.models"],
             "default_connection": "master",
         }
     },
@@ -65,3 +65,6 @@ def create_config_file():
 if __name__ == "__main__":
     create_config_file()
     dotenv.set_key(ENV_LOCATION, "TORTOISE_CONFIG", CONFIG_FILE)
+
+
+#TODO add update

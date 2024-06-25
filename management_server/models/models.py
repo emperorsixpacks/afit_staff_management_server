@@ -3,7 +3,7 @@ from typing import TypeVar
 
 from tortoise import fields
 from tortoise.models import Model as BaseModel
-from management_server.models.helpers import hash_password, generate_staff_id
+from management_server.utils.model_helpers import hash_password, generate_staff_id
 
 MODEL = TypeVar("MODEL")
 
@@ -120,12 +120,10 @@ class StaffModel(TimestampMixin, BaseModel):
 
 
 
-class Admin(TimestampMixin, BaseModel):
+class AdminModel(TimestampMixin, BaseModel):
     id = fields.UUIDField(primary_key=True)
     staff = fields.OneToOneField(model_name="staff", related_name="admin", on_delete=fields.CASCADE)
 
     class Meta:
         table = "admin"
         ordering = ["name", "short_name"]
-
-
