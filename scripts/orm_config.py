@@ -20,7 +20,7 @@ DEFAULT_CONFIG = {
     },
     "apps": {
         "models": {
-            "models": ["management_server.models"],
+            "models": ["management_server.models",  "aerich.models"],
             "default_connection": "master",
         }
     },
