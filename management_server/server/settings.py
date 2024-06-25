@@ -2,6 +2,7 @@ import os
 from typing import Dict, Optional, Union
 
 from pydantic_settings import BaseSettings, SettingsConfigDict
+from pydantic import FilePath, field_validator
 
 from management_server.constants import APP_BASE_URL
 from management_server.helpers import DBType
@@ -39,6 +40,7 @@ class DBSettings(BaseConfig):
     database_username: Optional[str] = None
     secret_key: Optional[str] = None
     database_type: DBType = DBType.SQLITE
+    tortoise_config: Optional[FilePath | None ] = None
 
     def __post_init__(self):
         if self.database_type not in [i.value for i in DBType]:
@@ -53,3 +55,10 @@ class DBSettings(BaseConfig):
         if self.database_type == DBType.SQLITE:
             return f"{self.database_type}:///{self.database_name}.sqlite3"
         return f"{self.database_type}://{self.database_username}:{self.database_password}@{self.database_hostname}:{self.database_port}/{self.database_name}"
+    
+    @field_validator("tortoise_config", mode="before")
+    @classmethod
+    def check_if_none(cls, value):
+        if value == "NONE" or value == "":
+            return None
+        return value
