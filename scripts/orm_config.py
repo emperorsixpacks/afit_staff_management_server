@@ -14,13 +14,14 @@ if db_settings.tortoise_config is None:
 else:
     CONFIG_FILE = db_settings.tortoise_config
 
+
 DEFAULT_CONFIG = {
     "connections": {
         "master": db_settings.database_url
     },
     "apps": {
         "models": {
-            "models": ["management_server.models.models",  "aerich.models"],
+            "models": ["management_server.models",  "aerich.models"],
             "default_connection": "master",
         }
     },
@@ -65,6 +66,6 @@ def create_config_file():
 if __name__ == "__main__":
     create_config_file()
     dotenv.set_key(ENV_LOCATION, "TORTOISE_CONFIG", CONFIG_FILE)
-
+    
 
 #TODO add update

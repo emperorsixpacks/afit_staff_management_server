@@ -18,6 +18,12 @@ pyyml = "^0.0.2"
 passlib = "^1.7.4"
 
 
+
+
+[tool.aerich]
+tortoise_orm = "scripts.orm_config.DEFAULT_CONFIG"
+location = "./migrations"
+src_folder = "./."
 [build-system]
 requires = ["poetry-core"]
 build-backend = "poetry.core.masonry.api"

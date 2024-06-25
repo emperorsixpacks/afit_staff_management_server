@@ -11,6 +11,33 @@ class TimestampMixin:
     created_at = fields.DatetimeField(null=True, auto_now_add=True)
     modified_at = fields.DatetimeField(null=True, auto_now=True)
 
+class BaseStaffModel(TimestampMixin, BaseModel):
+    staff_id = fields.CharField(max_length=13, primary_key=True)
+    user = fields.OneToOneField(model_name="models.UserModel",  on_delete=fields.CASCADE)
+
+    @classmethod
+    async def create(cls, **kwargs) -> MODEL:
+        """
+        Create a new instance of the class with the given keyword arguments and save it to the database.
+
+        Args:
+            **kwargs: Keyword arguments to initialize the instance.
+
+        Raises:
+            ValueError: If the "password" argument is not provided.
+
+        Returns:
+            The newly created instance.
+        """
+        department: DepartmentModel = kwargs.get("department", None)
+        if department is None:
+            raise ValueError("Department must be set")
+        department_short_name = await DepartmentModel.get(department_id=department.department_id).short_name
+        generated_staff_id = generate_staff_id(department_short_name)
+        kwargs.update(("staff_id", generated_staff_id))
+        instance = cls(**kwargs)
+        await instance.save()
+        return instance
 
 class UserModel(TimestampMixin, BaseModel):
     """
@@ -73,55 +100,22 @@ class DepartmentModel(TimestampMixin, BaseModel):
     name = fields.CharField(max_length=20, min_length=3, null=False, unique=True)
     short_name = fields.CharField(max_length=3, min_length=3, null=False, unique=True)
     description = fields.TextField(null=False, max_length=255)
-    department_head = fields.ForeignKeyField(model_name="models.AdminModel", on_delete=fields.SET_NULL, null=True)
+    department_head = fields.OneToOneField(model_name="models.AdminModel", on_delete=fields.SET_NULL, null=True)
 
     class Meta:
-        table = "name"
+        table = "department"
         ordering = ["name", "short_name"]
 
 
-class StaffModel(TimestampMixin, BaseModel):
-    staff_id = fields.CharField(max_length=13, primary_key=True)
-    user = fields.OneToOneField(model_name="models.UserModel",  on_delete=fields.CASCADE)
-    department_head = fields.ForeignKeyField(
-        model_name="models.AdminModel", on_delete=fields.NO_ACTION
-    )
-    department = fields.ForeignKeyField(model_name="models.DepartmentModel", on_delete=fields.SET_NULL, null=True)
-
+class StaffModel(BaseStaffModel):
+    department = fields.OneToOneField(model_name="models.DepartmentModel", on_delete=fields.SET_NULL, null=True)
     class Meta:
         table = "staff"
         ordering = ["staff_id"]
 
-    @classmethod
-    async def create(cls, **kwargs) -> MODEL:
-        """
-        Create a new instance of the class with the given keyword arguments and save it to the database.
 
-        Args:
-            **kwargs: Keyword arguments to initialize the instance.
-
-        Raises:
-            ValueError: If the "password" argument is not provided.
-
-        Returns:
-            The newly created instance.
-        """
-        department: DepartmentModel = kwargs.get("department", None)
-        if department is None:
-            raise ValueError("Department must be set")
-        department_short_name = await DepartmentModel.get(department_id=department.department_id).short_name
-        generated_staff_id = generate_staff_id(department_short_name)
-        kwargs.update(("staff_id", generated_staff_id))
-        instance = cls(**kwargs)
-        await instance.save()
-        return instance
-
-
-
-class AdminModel(TimestampMixin, BaseModel):
-    id = fields.UUIDField(primary_key=True)
-    staff = fields.OneToOneField(model_name="models.StaffModel",  on_delete=fields.CASCADE)
-
+class AdminModel(BaseStaffModel):
+    
     class Meta:
         table = "admin"
-        ordering = ["name", "short_name"]
+        ordering = ["id"]
