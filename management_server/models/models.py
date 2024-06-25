@@ -5,7 +5,7 @@ from tortoise import fields
 from tortoise.models import Model as BaseModel
 from management_server.models.helpers import EmailString
 from management_server.models.validators import phone_number_vaidator
-from management_server.models.helpers import hash_password
+from management_server.models.helpers import hash_password, generate_staff_id
 
 
 class TimestampMixin:
@@ -63,8 +63,8 @@ class UserModel(TimestampMixin, BaseModel):
         password = kwargs.get("password_hash", None)
         if password is None:
             raise ValueError("Password must be set")
+        kwargs.update({"password_hash": hash_password(password)})
         instance = cls(**kwargs)
-        instance.password_hash = hash_password(password)
         await instance.save()
         return instance
 
@@ -95,6 +95,31 @@ class StaffModel(TimestampMixin, BaseModel):
         table = "staff"
         ordering = ["staff_id"]
 
+    @classmethod
+    async def create(cls, **kwargs):
+        """
+        Create a new instance of the class with the given keyword arguments and save it to the database.
+
+        Args:
+            **kwargs: Keyword arguments to initialize the instance.
+
+        Raises:
+            ValueError: If the "password" argument is not provided.
+
+        Returns:
+            The newly created instance.
+        """
+        department: DepartmentModel = kwargs.get("department", None)
+        if department is None:
+            raise ValueError("Department must be set")
+        department_short_name = await DepartmentModel.get(department_id=department.department_id).short_name
+        generated_staff_id = generate_staff_id(department_short_name)
+        kwargs.update(("staff_id", generated_staff_id))
+        instance = cls(**kwargs)
+        await instance.save()
+        return instance
+
+
 
 class Admin(TimestampMixin, BaseModel):
     id = fields.UUIDField(primary_key=True)
@@ -103,3 +128,7 @@ class Admin(TimestampMixin, BaseModel):
     class Meta:
         table = "admin"
         ordering = ["name", "short_name"]
+
+
+
+# TODO check the create command on the usermodel
