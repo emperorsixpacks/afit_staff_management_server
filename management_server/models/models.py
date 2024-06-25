@@ -7,7 +7,8 @@ from management_server.models.helpers import EmailString
 from management_server.models.validators import phone_number_vaidator
 from management_server.models.helpers import hash_password
 
-class TimestampMixin():
+
+class TimestampMixin:
     created_at = fields.DatetimeField(null=True, auto_now_add=True)
     modified_at = fields.DatetimeField(null=True, auto_now=True)
 
@@ -16,17 +17,20 @@ class UserModel(TimestampMixin, BaseModel):
     """
     User model class
     """
+
     user_id = fields.UUIDField(primary_key=True)
     first_name = fields.CharField(max_length=20, min_length=3, null=False)
     last_name = fields.CharField(max_length=20, min_length=3, null=False)
     email = fields.CharField(max_length=100, min_length=10, unique=True, null=False)
-    phone_number = fields.CharField(max_length=11, min_length=11, unique=True, null=False)
+    phone_number = fields.CharField(
+        max_length=11, min_length=11, unique=True, null=False
+    )
     mobile_network = fields.CharField(max_length=15, min_length=3, null=False)
     state = fields.CharField(max_length=20, min_length=3, null=False)
     lga = fields.CharField(max_length=20, min_length=3, null=False)
     ward = fields.CharField(max_length=20, min_length=3, null=False)
     password = fields.CharField(max_length=500, null=False)
-
+    staff = fields.OneToOneRelation(model_name="staff", related_name="user")
 
     class Meta:
         table = "user"
@@ -41,7 +45,7 @@ class UserModel(TimestampMixin, BaseModel):
             str: The full name of the object.
         """
         return f"{self.first_name} {self.last_name}"
-    
+
     @classmethod
     async def create(cls, **kwargs):
         """
@@ -65,46 +69,35 @@ class UserModel(TimestampMixin, BaseModel):
         return instance
 
 
-
 class DepartmentModel(BaseModel):
     __tablename__ = "department"
     department_id = fields.UUIDField(primary_key=True)
     name = fields.CharField(max_length=20, min_length=3, null=False, unique=True)
-    short_name = fields.CharField(max_length=3, min_length=3, null=False, , unique=True)
+    short_name = fields.CharField(max_length=3, min_length=3, null=False, unique=True)
     description = fields.TextField(null=False, max_length=255)
+    # staffs = fields
 
     class Meta:
         table = "name"
         ordering = ["name", "short_name"]
 
 
-class StaffModel(BaseStaffModel, table=True):
-    __tablename__ = "staff"
-    user_id: ClassVar = Column(String, ForeignKey('user.id'), unique=True, null=False)
-    user: UserModel = Relationship(back_populates="staff", sa_relationship_kwargs={"uselist": False, "foreign_keys":[user_id]})
-    department_id: ClassVar = Column(String, ForeignKey('department.department_id'), unique=True, null=False)
-    department: DepartmentModel = Relationship(
-        back_populates="staff_members", sa_relationship_kwargs={"uselist": False, "foreign_keys":[department_id]}
-    )
-    admin: AdminModel = Relationship(back_populates="staff")
-
-
-        
-
-class AdminModel(BaseModel, table=True):
-    __tablename__ = "admin"
-    id: str = fields(default=None, primary_key=True, null=False, index=True)
-    staff_id: str = fields(foreign_key="staff.staff_id", null=False, unique=True)
-    staff: StaffModel = Relationship(
-        back_populates="admin",
-        sa_relationship_kwargs={"uselist": False},
+class StaffModel(BaseModel):
+    staff_id = fields.CharField(max_length=13, primary_key=True)
+    user = fields.OneToOneField(model_name="user", related_name="staff")
+    admin = fields.OneToOneNullableRelation(model_name="admin", related_name="staff")
+    department_head = fields.ForeignKeyField(
+        model_name="admin", on_delete=fields.NO_ACTION
     )
 
-    @fields_validator("id")
-    @classmethod
-    def validate_admin_model(cls, value):
-        print("hello")
-        # self.staff_id = str(generate_staff_id(dept="AFIT"))
-        # return self
+    class Meta:
+        table = "staff"
+        ordering = ["name", "short_name"]
 
-        return value
+
+class Admin(BaseModel):
+    staff = fields.OneToOneField(model_name="staff", related_name="admin")
+
+    class Meta:
+        table = "admin"
+        ordering = ["name", "short_name"]
