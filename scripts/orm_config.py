@@ -1,13 +1,18 @@
 import os
 import yaml
+import dotenv
 
 from management_server.server.settings import DBSettings
 from management_server.constants import APP_BASE_URL
 
-
-CONFIG_FILE = os.path.join(APP_BASE_URL, "extras/tortoise.yml")
 db_settings = DBSettings()
 
+ENV_LOCATION = os.path.join(APP_BASE_URL, ".env")
+
+if db_settings.tortoise_config is None:
+    CONFIG_FILE = os.path.join(APP_BASE_URL, "extras/tortoise.yml")
+else:
+    CONFIG_FILE = db_settings.tortoise_config
 
 DEFAULT_CONFIG = {
     "connections": {
@@ -59,3 +64,4 @@ def create_config_file():
 
 if __name__ == "__main__":
     create_config_file()
+    dotenv.set_key(ENV_LOCATION, "TORTOISE_CONFIG", CONFIG_FILE)
