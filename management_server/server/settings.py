@@ -53,12 +53,12 @@ class DBSettings(BaseConfig):
         if not os.path.exists(f"{APP_BASE_URL}/{self.database_name}.sqlite3"):
             os.makedirs(f"{APP_BASE_URL}", exist_ok=True)
         if self.database_type == DBType.SQLITE:
-            return f"{self.database_type}:///{self.database_name}.sqlite3"
+            return f"{self.database_type}:///{APP_BASE_URL}/{self.database_name}.sqlite3"
         return f"{self.database_type}://{self.database_username}:{self.database_password}@{self.database_hostname}:{self.database_port}/{self.database_name}"
     
     @field_validator("tortoise_config", mode="before")
     @classmethod
     def check_if_none(cls, value):
-        if value == "NONE" or value == "":
+        if value == "NONE" or value == "" or not os.path.exists(value):
             return None
         return value
