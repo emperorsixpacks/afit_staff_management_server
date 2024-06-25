@@ -1,5 +1,5 @@
 from __future__ import annotations
-from typing import Dict, ClassVar
+from typing import TypeVar
 
 from tortoise import fields
 from tortoise.models import Model as BaseModel
@@ -7,6 +7,7 @@ from management_server.models.helpers import EmailString
 from management_server.models.validators import phone_number_vaidator
 from management_server.models.helpers import hash_password, generate_staff_id
 
+MODEL = TypeVar("MODEL")
 
 class TimestampMixin:
     created_at = fields.DatetimeField(null=True, auto_now_add=True)
@@ -47,7 +48,7 @@ class UserModel(TimestampMixin, BaseModel):
         return f"{self.first_name} {self.last_name}"
 
     @classmethod
-    async def create(cls, **kwargs):
+    async def create(cls, **kwargs) -> MODEL:
         """
         Create a new instance of the class with the given keyword arguments and save it to the database.
 
@@ -96,7 +97,7 @@ class StaffModel(TimestampMixin, BaseModel):
         ordering = ["staff_id"]
 
     @classmethod
-    async def create(cls, **kwargs):
+    async def create(cls, **kwargs) -> MODEL:
         """
         Create a new instance of the class with the given keyword arguments and save it to the database.
 
