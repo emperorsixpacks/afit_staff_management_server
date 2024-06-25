@@ -1,4 +1,4 @@
-from management_server.models.helpers import get_mobile_prefix, MobilePrefix
+from management_server.utils.model_helpers import get_mobile_prefix, MobilePrefix
 
 def phone_number_vaidator(phone_number:str) -> MobilePrefix | None:
     """

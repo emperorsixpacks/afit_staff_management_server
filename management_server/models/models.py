@@ -29,7 +29,6 @@ class UserModel(TimestampMixin, BaseModel):
     lga = fields.CharField(max_length=20, min_length=3, null=False)
     ward = fields.CharField(max_length=20, min_length=3, null=False)
     password_hash = fields.CharField(max_length=500, null=False)
-    staff = fields.OneToOneRelation(model_name="staff", related_name="user")
 
     class Meta:
         table = "user"
@@ -74,7 +73,7 @@ class DepartmentModel(TimestampMixin, BaseModel):
     name = fields.CharField(max_length=20, min_length=3, null=False, unique=True)
     short_name = fields.CharField(max_length=3, min_length=3, null=False, unique=True)
     description = fields.TextField(null=False, max_length=255)
-    department_head = fields.ForeignKeyField(model_name="admin", on_delete=fields.SET_NULL, null=True)
+    department_head = fields.ForeignKeyField(model_name="models.AdminModel", on_delete=fields.SET_NULL, null=True)
 
     class Meta:
         table = "name"
@@ -83,12 +82,11 @@ class DepartmentModel(TimestampMixin, BaseModel):
 
 class StaffModel(TimestampMixin, BaseModel):
     staff_id = fields.CharField(max_length=13, primary_key=True)
-    user = fields.OneToOneField(model_name="user", related_name="staff")
-    admin = fields.OneToOneNullableRelation(model_name="admin", related_name="staff")
+    user = fields.OneToOneField(model_name="models.UserModel",  on_delete=fields.CASCADE)
     department_head = fields.ForeignKeyField(
-        model_name="admin", on_delete=fields.NO_ACTION
+        model_name="models.AdminModel", on_delete=fields.NO_ACTION
     )
-    department = fields.ForeignKeyField(model_name="department", on_delete=fields.SET_NULL, null=True)
+    department = fields.ForeignKeyField(model_name="models.DepartmentModel", on_delete=fields.SET_NULL, null=True)
 
     class Meta:
         table = "staff"
@@ -122,7 +120,7 @@ class StaffModel(TimestampMixin, BaseModel):
 
 class AdminModel(TimestampMixin, BaseModel):
     id = fields.UUIDField(primary_key=True)
-    staff = fields.OneToOneField(model_name="staff", related_name="admin", on_delete=fields.CASCADE)
+    staff = fields.OneToOneField(model_name="models.StaffModel",  on_delete=fields.CASCADE)
 
     class Meta:
         table = "admin"
