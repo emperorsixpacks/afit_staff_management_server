@@ -1,0 +1,15 @@
+connections:
+  master:
+    engine: tortoise.backends.asyncpg
+    credentials:
+      host: ''
+      port: ''
+      user: none
+      password: none
+      database: none
+
+apps:
+  models:
+    models:
+      - management_server.models
+    default_connection: master
