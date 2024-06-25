@@ -5,6 +5,7 @@ from tortoise import fields
 from tortoise.models import Model as BaseModel
 from management_server.models.helpers import EmailString
 from management_server.models.validators import phone_number_vaidator
+from management_server.models.helpers import hash_password
 
 class TimestampMixin():
     created_at = fields.DatetimeField(null=True, auto_now_add=True)
@@ -16,15 +17,15 @@ class UserModel(TimestampMixin, BaseModel):
     User model class
     """
     user_id = fields.UUIDField(primary_key=True)
-    first_name = fields.CharField(max_length=20, min_length=3, nullable=False)
-    last_name = fields.CharField(max_length=20, min_length=3, nullable=False)
-    email = fields.CharField(max_length=100, min_length=10, unique=True, nullable=False)
-    phone_number = fields.CharField(max_length=11, min_length=11, unique=True, nullable=False)
-    mobile_network = fields.CharField(max_length=15, min_length=3, nullable=False)
-    state = fields.CharField(max_length=20, min_length=3, nullable=False)
-    lga = fields.CharField(max_length=20, min_length=3, nullable=False)
-    ward = fields.CharField(max_length=20, min_length=3, nullable=False)
-    password = fields.CharField(max_length=500, nullable=False)
+    first_name = fields.CharField(max_length=20, min_length=3, null=False)
+    last_name = fields.CharField(max_length=20, min_length=3, null=False)
+    email = fields.CharField(max_length=100, min_length=10, unique=True, null=False)
+    phone_number = fields.CharField(max_length=11, min_length=11, unique=True, null=False)
+    mobile_network = fields.CharField(max_length=15, min_length=3, null=False)
+    state = fields.CharField(max_length=20, min_length=3, null=False)
+    lga = fields.CharField(max_length=20, min_length=3, null=False)
+    ward = fields.CharField(max_length=20, min_length=3, null=False)
+    password = fields.CharField(max_length=500, null=False)
 
 
     class Meta:
@@ -40,58 +41,48 @@ class UserModel(TimestampMixin, BaseModel):
             str: The full name of the object.
         """
         return f"{self.first_name} {self.last_name}"
-
-    @model_validator(mode="before")
-    def vaidate_user_model(self, data: Dict):
+    
+    @classmethod
+    async def create(cls, **kwargs):
         """
-        Validates the user model before saving it to the database.
+        Create a new instance of the class with the given keyword arguments and save it to the database.
 
-        This function is a model validator that is called before saving the user model to the database.
-        It performs the following checks:
-        - Checks if the 'phone_number' fields is empty and raises an assertion error if it is.
-        - Checks if the 'mobile_network' fields is empty and raises an assertion error if it is.
-        - Validates the 'phone_number' fields using the 'phone_number_vaidator' function and assigns the result to the 'validate' variable.
-        - If the 'validate' variable is None, it raises an error (TODO).
-        - Updates the 'mobile_network' fields in the data dictionary with the value from the 'validate.network' attribute.
+        Args:
+            **kwargs: Keyword arguments to initialize the instance.
 
-        Parameters:
-            data (Dict): The data dictionary containing the user model data.
+        Raises:
+            ValueError: If the "password" argument is not provided.
 
         Returns:
-            Dict: The updated data dictionary with the 'mobile_network' fields updated.
+            The newly created instance.
         """
-        user_phone_number = self.get("phone_numeber", None)
-        mobile_network = self.get("mobile_network", None)
-        assert user_phone_number is None, "fields phone_numeber is empty"
-
-        assert mobile_network is None, "fields mobile_network is empty"
-
-        validate = phone_number_vaidator(phone_number=user_phone_number)
-        if validate is None:
-            # TODO raise an error here
-            pass
-        return data.update(("mobile_network", validate.network))
+        password = kwargs.get("password", None)
+        if password is None:
+            raise ValueError("Password must be set")
+        instance = cls(**kwargs)
+        instance.password = hash_password(password)
+        await instance.save()
+        return instance
 
 
-class DepartmentModel(BaseModel, table=True):
+
+class DepartmentModel(BaseModel):
     __tablename__ = "department"
-    department_id: str = fields(
-        default=None, primary_key=True, nullable=False, index=True
-    )
-    name: str = fields(max_length=20, min_length=3, nullable=False, unique=True)
-    short_name: str = fields(max_length=3, min_length=3, nullable=False, unique=True)
-    description: str = fields(max_length=250, min_length=10, nullable=True)
-    staff_members: StaffModel = Relationship(back_populates="department")
-    department_head_id: str = fields(
-        unique=True, nullable=False, foreign_key="admin.staff_id"
-    )
+    department_id = fields.UUIDField(primary_key=True)
+    name = fields.CharField(max_length=20, min_length=3, null=False, unique=True)
+    short_name = fields.CharField(max_length=3, min_length=3, null=False, , unique=True)
+    description = fields.TextField(null=False, max_length=255)
+
+    class Meta:
+        table = "name"
+        ordering = ["name", "short_name"]
 
 
 class StaffModel(BaseStaffModel, table=True):
     __tablename__ = "staff"
-    user_id: ClassVar = Column(String, ForeignKey('user.id'), unique=True, nullable=False)
+    user_id: ClassVar = Column(String, ForeignKey('user.id'), unique=True, null=False)
     user: UserModel = Relationship(back_populates="staff", sa_relationship_kwargs={"uselist": False, "foreign_keys":[user_id]})
-    department_id: ClassVar = Column(String, ForeignKey('department.department_id'), unique=True, nullable=False)
+    department_id: ClassVar = Column(String, ForeignKey('department.department_id'), unique=True, null=False)
     department: DepartmentModel = Relationship(
         back_populates="staff_members", sa_relationship_kwargs={"uselist": False, "foreign_keys":[department_id]}
     )
@@ -102,8 +93,8 @@ class StaffModel(BaseStaffModel, table=True):
 
 class AdminModel(BaseModel, table=True):
     __tablename__ = "admin"
-    id: str = fields(default=None, primary_key=True, nullable=False, index=True)
-    staff_id: str = fields(foreign_key="staff.staff_id", nullable=False, unique=True)
+    id: str = fields(default=None, primary_key=True, null=False, index=True)
+    staff_id: str = fields(foreign_key="staff.staff_id", null=False, unique=True)
     staff: StaffModel = Relationship(
         back_populates="admin",
         sa_relationship_kwargs={"uselist": False},
