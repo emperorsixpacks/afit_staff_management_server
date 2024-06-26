@@ -1,16 +1,17 @@
 from __future__ import annotations
 from uuid import UUID
-from datetime import datetime
-from pydantic import BaseModel
+from typing import Optional
+from pydantic import BaseModel, ConfigDict
 
 
 class BaseSchema(BaseModel):
-    created_at: datetime
-    updated_at: datetime
+    model_config = ConfigDict(extra="allow")
+    created_at: Optional[datetime] = None
+    updated_at: Optional[datetime] = None
 
 
 class UserSchema(BaseSchema):
-    user_id: UUID
+    # user_id: UUID
     first_name: str
     last_name: str
     email: str
@@ -40,5 +41,4 @@ class StaffSchema(BaseStaffSchema):
 
 
 class AdminShema(BaseSchema):
-    username: str
-    password_hash: str
+    ...
