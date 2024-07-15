@@ -4,6 +4,7 @@ from typing import AsyncGenerator
 from fastapi import FastAPI
 from tortoise.contrib.fastapi import RegisterTortoise
 from management_server.server.settings import AppConfig, DBSettings
+from management_server.routers import staff_routers
 
 db_settings = DBSettings()
 
@@ -31,4 +32,4 @@ server = FastAPI(
     lifespan=lifespan
 )
 
-
+server.include_router(staff_routers.router)

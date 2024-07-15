@@ -1,7 +1,11 @@
 from __future__ import annotations
 from uuid import UUID
 from typing import Optional
-from pydantic import BaseModel, ConfigDict
+from datetime import datetime
+from pydantic import BaseModel, ConfigDict, Field, field_validator
+
+from management_server.utils.model_helpers import EmailString
+from management_server.utils.validators import phone_number_vaidator
 
 
 class BaseSchema(BaseModel):
@@ -11,16 +15,26 @@ class BaseSchema(BaseModel):
 
 
 class UserSchema(BaseSchema):
-    # user_id: UUID
+    user_id: Optional[UUID] = None
     first_name: str
     last_name: str
-    email: str
+    email: EmailString
     phone_number: str
-    mobile_network: str
     state: str
     lga: str
     ward: str
-    password_hash: str
+    password_hash: str = Field(exclude=True)
+    mobile_network: str| None = Field(exclude=True, default=None)
+
+    @classmethod
+    @field_validator("mobile_network", mode="after")
+    def validate_phone_number(cls, value):
+        mobile_network = phone_number_vaidator(value)
+        if mobile_network is None:
+            raise ValueError(f"Invalid Phone number {value}")
+        return mobile_network
+
+
 
 
 class DepartmentSchema(BaseSchema):
