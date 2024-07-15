@@ -4,6 +4,7 @@ from typing import TypeVar
 from tortoise import fields
 from tortoise.models import Model as BaseModel
 from management_server.utils.model_helpers import hash_password, generate_staff_id
+from management_server.utils.utils import generate_random_password
 
 MODEL = TypeVar("MODEL")
 
@@ -87,7 +88,7 @@ class UserModel(TimestampMixin, BaseModel):
         """
         password = kwargs.get("password_hash", None)
         if password is None:
-            raise ValueError("Password must be set")
+            password = generate_random_password()
         kwargs.update({"password_hash": hash_password(password)})
         instance = cls(**kwargs)
         await instance.save()

@@ -63,7 +63,7 @@ class EmailString(EmailStr):
 
     @classmethod
     def _validate(cls, input_value: str, /) -> str:
-        return validate_email(input_value, check_deliverability=True)[1]
+        return validate_email(input_value, check_deliverability=True).email
 
 
 @dataclass
