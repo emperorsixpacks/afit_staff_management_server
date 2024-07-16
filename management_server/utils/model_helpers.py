@@ -11,7 +11,7 @@ from pydantic import EmailStr
 
 from management_server.constants import APP_BASE_URL
 
-MOBILE_PRIFIX_JSON = os.path.join("extras/mobile_prefixes.json", APP_BASE_URL)
+MOBILE_PRIFIX_JSON = os.path.join(APP_BASE_URL, "extras/mobile_prefixes.json")
 
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
@@ -26,8 +26,8 @@ def get_mobile_prefix() -> List[MobilePrefix]:
     with open(MOBILE_PRIFIX_JSON, "r", encoding="UTF-8") as file:
         data: List[Dict[str, str]] = json.load(file)["mobile"]
         return [
-            MobilePrefix(network=network, prefixes=prefixes)
-            for network, prefixes in data
+            MobilePrefix(network=network["network"], prefixes=network["prefixes"])
+            for network in data
         ]
 
 
