@@ -44,7 +44,6 @@ class UserModel(TimestampMixin, BaseModel):
     """
     User model class
     """
-
     user_id = fields.UUIDField(primary_key=True)
     first_name = fields.CharField(max_length=20, min_length=3, null=False)
     last_name = fields.CharField(max_length=20, min_length=3, null=False)

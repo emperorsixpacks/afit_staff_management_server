@@ -16,5 +16,5 @@ def phone_number_vaidator(phone_number:str) -> MobilePrefix | None:
 
     for network in mobile_networks:
         if first_four_digites in network.prefixes or first_five_digits in network.prefixes:
-            return network
+            return network.network
     return None
