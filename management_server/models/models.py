@@ -5,7 +5,6 @@ from fastapi import status
 
 from tortoise import fields
 from tortoise.models import Model as BaseModel
-from tortoise.functions import Count
 from tortoise.exceptions import IntegrityError
 
 
@@ -49,8 +48,8 @@ class BaseStaffModel(TimestampMixin, BaseModel):
         department_short_name = await DepartmentModel.get_or_none(
             department_id=department.department_id
         ).short_name
-        departmeny_staff_count = await StaffModel.filter(department=department).all().count() + 1 
-        generated_staff_id = generate_staff_id(department_short_name)
+        department_staff_count = await StaffModel.filter(department=department).all().count() + 1 
+        generated_staff_id = generate_staff_id(short_name=department_short_name, count=department_staff_count)
         kwargs.update(("staff_id", generated_staff_id))
         instance = cls(**kwargs)
         await instance.save()

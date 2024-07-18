@@ -26,7 +26,7 @@ def get_mobile_prefix() -> List[MobilePrefix]:
         ]
 
 
-def generate_staff_id(short_name: str, count: int):
+def generate_staff_id(*, short_name: str, count: int):
     """
     Generate a unique staff ID by combining the department abbreviation and a randomly generated user number.
 
@@ -53,11 +53,3 @@ class MobilePrefix:
     network: str
     prefixes: List[str]
 
-
-
-__all__= [
-    "get_mobile_prefix",
-    "generate_staff_id",
-    "EmailString",
-    "MobilePrefix"
-]
