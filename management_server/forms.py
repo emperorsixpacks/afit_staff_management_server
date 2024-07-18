@@ -10,4 +10,10 @@ class UserCreateForm:
     state: str = Form(...)
     lga: str = Form(...)
     ward: str = Form(...)
-    password_hash: str = Form(...)
+
+
+
+@dataclass
+class LoginForm:
+    email: str = Form()
+    password: str = Form()

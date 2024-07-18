@@ -1,6 +1,7 @@
 from management_server.utils.model_helpers import get_mobile_prefix, MobilePrefix
 
-def phone_number_vaidator(phone_number:str) -> MobilePrefix | None:
+
+def phone_number_vaidator(phone_number: str) -> MobilePrefix | None:
     """
     Validates a phone number and returns the corresponding MobilePrefix if found, None otherwise.
 
@@ -15,6 +16,9 @@ def phone_number_vaidator(phone_number:str) -> MobilePrefix | None:
     mobile_networks = get_mobile_prefix()
 
     for network in mobile_networks:
-        if first_four_digites in network.prefixes or first_five_digits in network.prefixes:
+        if (
+            first_four_digites in network.prefixes
+            or first_five_digits in network.prefixes
+        ):
             return network.network
     return None

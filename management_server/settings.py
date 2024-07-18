@@ -62,3 +62,7 @@ class DBSettings(BaseConfig):
         if value == "NONE" or value == "" or not os.path.exists(value):
             return None
         return value
+
+class RedisSettings(BaseConfig):
+    redis_port: str = "6379"
+    redis_host: str = "localhost"

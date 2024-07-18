@@ -1,8 +1,14 @@
 from __future__ import annotations
 from uuid import UUID
-from typing import Optional, Self
+from typing import Optional, Self, Dict, List
 from datetime import datetime
-from pydantic import BaseModel, ConfigDict, Field, model_validator,field_validator, field_serializer
+from pydantic import (
+    BaseModel,
+    ConfigDict,
+    Field,
+    model_validator,
+    field_serializer,
+)
 
 from management_server.utils.model_helpers import EmailString
 from management_server.utils.validators import phone_number_vaidator
@@ -10,20 +16,26 @@ from management_server.utils.validators import phone_number_vaidator
 
 class BaseSchema(BaseModel):
     model_config = ConfigDict(extra="allow")
-    created_at: Optional[datetime] = None
-    updated_at: Optional[datetime] = None
+    created_at: Optional[datetime] = Field(serilization_alias="created-at", default=None)
+    updated_at: Optional[datetime] = Field(serilization_alias="updated-at", default=None)
 
 
 class UserSchema(BaseSchema):
-    user_id: Optional[UUID] = None
-    first_name: str
-    last_name: str
+    model_config = ConfigDict(extra="ignore")
+    user_id: Optional[UUID] = Field(serialization_alias="user-id", default=None)
+    first_name: str = Field(serialization_alias="first-name")
+    last_name: str = Field(serialization_alias="last-name")
+    phone_number: str = Field(serialization_alias="phone-number")
+    mobile_network: str | None = Field(default=None, alias="mobile-network")
     email: EmailString
-    phone_number: str
     state: str
     lga: str
     ward: str
-    mobile_network: str | None = Field(default=None)
+
+    @model_validator(mode="before")
+    def filter_extra_fields(cls, values):
+        valid_fields = {field: values[field] for field in cls.model_fields if field in values}
+        return valid_fields
 
     @model_validator(mode="after")
     def validate_phone_number(self) -> Self:
@@ -48,9 +60,6 @@ class UserSchema(BaseSchema):
         return str(user_id)
 
 
-
-
-
 class DepartmentSchema(BaseSchema):
     department_id: UUID
     name: str
@@ -68,5 +77,20 @@ class StaffSchema(BaseStaffSchema):
     department: str
 
 
-class AdminShema(BaseSchema):
-    ...
+class AdminShema(BaseSchema): ...
+
+class Sessions(BaseSchema):
+    name: str
+    device_name:str
+
+class UserInCache(BaseModel):
+    user: UserSchema | Dict[str, str]
+    sessions: List[Sessions]
+
+    @field_serializer("user", when_used="json")
+    def serialize_user_field(user:UserSchema):
+        return user.model_dump_json()
+    
+    @field_serializer("sessions", when_used="json")
+    def serialize_sessions_field(sessions:List[Sessions]):
+        return [session.model_dump_json() for session in sessions]

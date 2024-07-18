@@ -2,7 +2,7 @@ import os
 import yaml
 import dotenv
 
-from management_server.server.settings import DBSettings
+from management_server.settings import DBSettings
 from management_server.constants import APP_BASE_URL
 
 db_settings = DBSettings()

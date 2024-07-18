@@ -16,6 +16,7 @@ tortoise-orm = {extras = ["aiosqlite"], version = "^0.21.3"}
 aerich = "^0.7.2"
 pyyml = "^0.0.2"
 passlib = "^1.7.4"
+coredis = "^4.17.0"
 
 
 

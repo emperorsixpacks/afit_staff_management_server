@@ -1,20 +1,33 @@
 from __future__ import annotations
 from typing import TypeVar
 
+from fastapi import status
+
 from tortoise import fields
 from tortoise.models import Model as BaseModel
-from management_server.utils.model_helpers import hash_password, generate_staff_id
-from management_server.utils.utils import generate_random_password
+from tortoise.functions import Count
+from tortoise.exceptions import IntegrityError
+
+
+from management_server.utils import (
+    hash_password,
+    generate_random_password,
+    generate_staff_id,
+)
+from management_server.exceptions import InvalidRequestError
+
 
 MODEL = TypeVar("MODEL")
+
 
 class TimestampMixin:
     created_at = fields.DatetimeField(null=True, auto_now_add=True)
     modified_at = fields.DatetimeField(null=True, auto_now=True)
 
+
 class BaseStaffModel(TimestampMixin, BaseModel):
     staff_id = fields.CharField(max_length=13, primary_key=True)
-    user = fields.OneToOneField(model_name="models.UserModel",  on_delete=fields.CASCADE)
+    user: fields.OneToOneRelation["UserModel"] = fields.OneToOneField(model_name="models.UserModel", on_delete=fields.CASCADE)
 
     @classmethod
     async def create(cls, **kwargs) -> MODEL:
@@ -33,17 +46,22 @@ class BaseStaffModel(TimestampMixin, BaseModel):
         department: DepartmentModel = kwargs.get("department", None)
         if department is None:
             raise ValueError("Department must be set")
-        department_short_name = await DepartmentModel.get(department_id=department.department_id).short_name
+        department_short_name = await DepartmentModel.get_or_none(
+            department_id=department.department_id
+        ).short_name
+        departmeny_staff_count = await StaffModel.filter(department=department).all().count() + 1 
         generated_staff_id = generate_staff_id(department_short_name)
         kwargs.update(("staff_id", generated_staff_id))
         instance = cls(**kwargs)
         await instance.save()
         return instance
 
+
 class UserModel(TimestampMixin, BaseModel):
     """
     User model class
     """
+
     user_id = fields.UUIDField(primary_key=True)
     first_name = fields.CharField(max_length=20, min_length=3, null=False)
     last_name = fields.CharField(max_length=20, min_length=3, null=False)
@@ -88,10 +106,16 @@ class UserModel(TimestampMixin, BaseModel):
         password = kwargs.get("password_hash", None)
         if password is None:
             password = generate_random_password()
+            print(password)
         kwargs.update({"password_hash": hash_password(password)})
         instance = cls(**kwargs)
-        await instance.save()
-        return instance
+        try:
+            await instance.save()
+            return instance
+        except IntegrityError as e:
+            raise InvalidRequestError(
+                detail=f"User with this {e}", status_code=status.HTTP_400_BAD_REQUEST
+            ) from e
 
 
 class DepartmentModel(TimestampMixin, BaseModel):
@@ -100,7 +124,9 @@ class DepartmentModel(TimestampMixin, BaseModel):
     name = fields.CharField(max_length=20, min_length=3, null=False, unique=True)
     short_name = fields.CharField(max_length=3, min_length=3, null=False, unique=True)
     description = fields.TextField(null=False, max_length=255)
-    department_head = fields.OneToOneField(model_name="models.AdminModel", on_delete=fields.SET_NULL, null=True)
+    department_head: fields.OneToOneNullableRelation["AdminModel"] = fields.OneToOneField(
+        model_name="models.AdminModel", on_delete=fields.SET_NULL, null=True
+    )
 
     class Meta:
         table = "department"
@@ -108,14 +134,17 @@ class DepartmentModel(TimestampMixin, BaseModel):
 
 
 class StaffModel(BaseStaffModel):
-    department = fields.OneToOneField(model_name="models.DepartmentModel", on_delete=fields.SET_NULL, null=True)
+    department: fields.OneToOneRelation["DepartmentModel"] = fields.OneToOneField(
+        model_name="models.DepartmentModel", on_delete=fields.SET_NULL, null=True
+    )
+
     class Meta:
         table = "staff"
         ordering = ["staff_id"]
 
 
 class AdminModel(BaseStaffModel):
-    
+
     class Meta:
         table = "admin"
         ordering = ["id"]
