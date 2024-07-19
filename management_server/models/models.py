@@ -4,7 +4,8 @@ from typing import TypeVar
 from fastapi import status
 
 from tortoise import fields
-from tortoise.models import Model as BaseModel
+from tortoise.models import Model
+from tortoise.transactions import in_transaction
 from tortoise.exceptions import IntegrityError
 
 
@@ -19,6 +20,15 @@ from management_server.exceptions import InvalidRequestError
 MODEL = TypeVar("MODEL")
 
 
+class BaseModel(Model):
+
+    @classmethod
+    async def _create(cls, instance: MODEL):
+        async with in_transaction() as connection:
+            await instance.save(using_db=connection, force_create=True)
+            return None
+
+
 class TimestampMixin:
     created_at = fields.DatetimeField(null=True, auto_now_add=True)
     modified_at = fields.DatetimeField(null=True, auto_now=True)
@@ -31,7 +41,7 @@ class BaseStaffModel(TimestampMixin, BaseModel):
     )
 
     @classmethod
-    async def create(cls, **kwargs) -> MODEL:
+    async def create(cls,**kwargs) -> MODEL:
         """
         Create a new instance of the class with the given keyword arguments and save it to the database.
 
@@ -58,7 +68,7 @@ class BaseStaffModel(TimestampMixin, BaseModel):
         )
         kwargs.update(("staff_id", generated_staff_id))
         instance = cls(**kwargs)
-        await instance.save()
+        await cls._create(instance)
         return instance
 
 
@@ -95,7 +105,7 @@ class UserModel(TimestampMixin, BaseModel):
         return f"{self.first_name} {self.last_name}"
 
     @classmethod
-    async def create(cls, **kwargs) -> MODEL:
+    async def create(cls, using_db, **kwargs) -> MODEL:
         """
         Create a new instance of the class with the given keyword arguments and save it to the database.
 
@@ -115,7 +125,7 @@ class UserModel(TimestampMixin, BaseModel):
         kwargs.update({"password_hash": hash_password(password)})
         instance = cls(**kwargs)
         try:
-            await instance.save()
+            await cls._create(instance=instance)
             return instance
         except IntegrityError as e:
             raise InvalidRequestError(
