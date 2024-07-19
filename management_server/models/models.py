@@ -23,15 +23,22 @@ MODEL = TypeVar("MODEL")
 class BaseModel(Model):
 
     @classmethod
-    async def _create(cls, instance: MODEL):
+    async def _create(cls, instance: MODEL, using_db=None):
         async with in_transaction() as connection:
-            await instance.save(using_db=connection, force_create=True)
+            db = using_db or connection
+            await instance.save(using_db=db, force_create=True)
             return None
+
+    class Meta:
+        abstract = True
 
 
 class TimestampMixin:
     created_at = fields.DatetimeField(null=True, auto_now_add=True)
     modified_at = fields.DatetimeField(null=True, auto_now=True)
+
+    class Meta:
+        abstract = True
 
 
 class BaseStaffModel(TimestampMixin, BaseModel):
@@ -41,7 +48,7 @@ class BaseStaffModel(TimestampMixin, BaseModel):
     )
 
     @classmethod
-    async def create(cls,**kwargs) -> MODEL:
+    async def create(cls, using_db=None, **kwargs) -> MODEL:
         """
         Create a new instance of the class with the given keyword arguments and save it to the database.
 
@@ -68,7 +75,7 @@ class BaseStaffModel(TimestampMixin, BaseModel):
         )
         kwargs.update(("staff_id", generated_staff_id))
         instance = cls(**kwargs)
-        await cls._create(instance)
+        await cls._create(instance, using_db=using_db)
         return instance
 
 
@@ -105,7 +112,7 @@ class UserModel(TimestampMixin, BaseModel):
         return f"{self.first_name} {self.last_name}"
 
     @classmethod
-    async def create(cls, using_db, **kwargs) -> MODEL:
+    async def create(cls, using_db=None, **kwargs) -> MODEL:
         """
         Create a new instance of the class with the given keyword arguments and save it to the database.
 
@@ -125,7 +132,7 @@ class UserModel(TimestampMixin, BaseModel):
         kwargs.update({"password_hash": hash_password(password)})
         instance = cls(**kwargs)
         try:
-            await cls._create(instance=instance)
+            await cls._create(instance=instance, using_db=using_db)
             return instance
         except IntegrityError as e:
             raise InvalidRequestError(
