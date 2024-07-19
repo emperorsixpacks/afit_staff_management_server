@@ -26,7 +26,9 @@ class TimestampMixin:
 
 class BaseStaffModel(TimestampMixin, BaseModel):
     staff_id = fields.CharField(max_length=13, primary_key=True)
-    user: fields.OneToOneRelation["UserModel"] = fields.OneToOneField(model_name="models.UserModel", on_delete=fields.CASCADE)
+    user: fields.OneToOneRelation["UserModel"] = fields.OneToOneField(
+        model_name="models.UserModel", on_delete=fields.CASCADE
+    )
 
     @classmethod
     async def create(cls, **kwargs) -> MODEL:
@@ -48,8 +50,12 @@ class BaseStaffModel(TimestampMixin, BaseModel):
         department_short_name = await DepartmentModel.get_or_none(
             department_id=department.department_id
         ).short_name
-        department_staff_count = await StaffModel.filter(department=department).all().count() + 1 
-        generated_staff_id = generate_staff_id(short_name=department_short_name, count=department_staff_count)
+        department_staff_count = (
+            await StaffModel.filter(department=department).all().count() + 1
+        )
+        generated_staff_id = generate_staff_id(
+            short_name=department_short_name, count=department_staff_count
+        )
         kwargs.update(("staff_id", generated_staff_id))
         instance = cls(**kwargs)
         await instance.save()
@@ -123,8 +129,10 @@ class DepartmentModel(TimestampMixin, BaseModel):
     name = fields.CharField(max_length=20, min_length=3, null=False, unique=True)
     short_name = fields.CharField(max_length=3, min_length=3, null=False, unique=True)
     description = fields.TextField(null=False, max_length=255)
-    department_head: fields.OneToOneNullableRelation["AdminModel"] = fields.OneToOneField(
-        model_name="models.AdminModel", on_delete=fields.SET_NULL, null=True
+    department_head: fields.OneToOneNullableRelation["AdminModel"] = (
+        fields.OneToOneField(
+            model_name="models.AdminModel", on_delete=fields.SET_NULL, null=True
+        )
     )
 
     class Meta:

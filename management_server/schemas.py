@@ -68,14 +68,15 @@ class DepartmentSchema(BaseSchema):
     department_head: AdminShema
 
 
-class BaseStaffSchema(BaseSchema):
-    staff_id: str
-    user: UserSchema
+class StaffSchema(BaseModel):
+    user:UserSchema
+    department_id:str = Field(serialization_alias="department-id")
+    staff_id: str = Field(serialization_alias="staff-id")
 
-
-class StaffSchema(BaseStaffSchema):
-    department: str
-
+    @model_validator(mode="before")
+    def filter_extra_fields(cls, values):
+        valid_fields = {field: values[field] for field in cls.model_fields if field in values}
+        return valid_fields
 
 class AdminShema(BaseSchema): ...
 
