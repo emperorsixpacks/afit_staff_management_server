@@ -9,7 +9,11 @@ from tortoise.exceptions import OperationalError
 from management_server.schemas import UserSchema, StaffSchema
 from management_server.models import UserModel, StaffModel, DepartmentModel
 from management_server.utils import verify_password
-from management_server.exceptions import InvalidCredentialsError, InvalidRequestError, ServerFailureError
+from management_server.exceptions import (
+    InvalidCredentialsError,
+    InvalidRequestError,
+    ServerFailureError,
+)
 
 
 class UserController(BaseModel):
@@ -37,34 +41,40 @@ class UserController(BaseModel):
         return UserSchema.model_validate(user.__dict__) if user else None
 
     @classmethod
-    async def _create_new_staff(cls, form_data: UserSchema) -> StaffSchema:
+    async def _create_new_staff(cls, form_data: Dict[str, str]) -> StaffSchema:
+        user_schema = UserSchema.model_validate(form_data)
+        staff_schema = StaffSchema(
+            user=user_schema, department_id=form_data.get("department_id")
+        )
         async with in_transaction() as connection:
-            if await UserModel.exists(email=form_data.email, using_db=connection):
+            if await UserModel.exists(email=user_schema.email, using_db=connection):
                 raise InvalidRequestError(
                     detail="A staff with this email already exists",
                     status_code=status.HTTP_406_NOT_ACCEPTABLE,
                 )
             created_user = await UserModel.create(
-                **form_data.model_dump(exclude_unset=True, exclude_none=True), using_db=connection
+                **user_schema.model_dump(exclude_unset=True, exclude_none=True),
+                using_db=connection,
             )
             department = await DepartmentModel.get_or_none(
-                department_id=form_data.department_id, using_db=connection
+                department_id=staff_schema.department_id, using_db=connection
             )
             if department is None:
                 raise InvalidRequestError(
-                    detail=f"Invalid Department with id {form_data.department_id}",
+                    detail=f"Invalid Department with id {staff_schema.department_id}",
                     status_code=status.HTTP_406_NOT_ACCEPTABLE,
                 )
-            new_staff = await StaffModel.create(user=created_user, department=department, using_db=connection)
+            new_staff = await StaffModel.create(
+                user=created_user, department=department, using_db=connection
+            )
             return StaffSchema(
                 department_id=department.department_id,
                 staff_id=new_staff.staff_id,
                 user=UserSchema.model_validate(created_user.__dict__),
             )
 
-
     @classmethod
-    async def create_new_staff(cls, form_data: UserSchema):
+    async def create_new_staff(cls, form_data: Dict[str, str]):
         try:
             await cls._create_new_staff(form_data=form_data)
         except OperationalError as e:

@@ -71,7 +71,7 @@ class DepartmentSchema(BaseSchema):
 class StaffSchema(BaseModel):
     user:UserSchema
     department_id:str = Field(serialization_alias="department-id")
-    staff_id: str = Field(serialization_alias="staff-id")
+    staff_id: str | None = Field(serialization_alias="staff-id", default=None)
 
     @model_validator(mode="before")
     def filter_extra_fields(cls, values):

@@ -16,5 +16,5 @@ router = APIRouter(prefix="/users", tags=["staff"])
 async def create_staff(
     form_data: Annotated[StaffCreateForm, Depends()],
 ):
-    new_staff = await UserController.create_new_staff(form_data=form_data)
+    new_staff = await UserController.create_new_staff(form_data=form_data.__dict__)
     return new_staff
