@@ -15,13 +15,17 @@ from management_server.utils.validators import phone_number_vaidator
 
 
 class BaseSchema(BaseModel):
-    model_config = ConfigDict(extra="allow")
+    model_config = ConfigDict(extra="ignore")
     created_at: Optional[datetime] = Field(serilization_alias="created-at", default=None)
     updated_at: Optional[datetime] = Field(serilization_alias="updated-at", default=None)
 
+    @model_validator(mode="before")
+    def filter_extra_fields(cls, values):
+        valid_fields = {field: values[field] for field in cls.model_fields if field in values and values }
+        return valid_fields
+
 
 class UserSchema(BaseSchema):
-    model_config = ConfigDict(extra="ignore")
     user_id: Optional[UUID] = Field(serialization_alias="user-id", default=None)
     first_name: str = Field(serialization_alias="first-name")
     last_name: str = Field(serialization_alias="last-name")
@@ -32,10 +36,7 @@ class UserSchema(BaseSchema):
     lga: str
     ward: str
 
-    @model_validator(mode="before")
-    def filter_extra_fields(cls, values):
-        valid_fields = {field: values[field] for field in cls.model_fields if field in values}
-        return valid_fields
+    
 
     @model_validator(mode="after")
     def validate_phone_number(self) -> Self:
@@ -61,16 +62,18 @@ class UserSchema(BaseSchema):
 
 
 class DepartmentSchema(BaseSchema):
-    department_id: UUID
+    department_id: UUID | None = Field(default=None, serialization_alias="department-id")
     name: str
     short_name: str
     description: str
-    department_head: AdminShema
+    department_head_id: str | None = Field(serialization_alias="department-head-id", default=None)
+        
+
 
 
 class StaffSchema(BaseModel):
     user:UserSchema
-    department_id:str = Field(serialization_alias="department-id")
+    department_id:UUID = Field(serialization_alias="department-id")
     staff_id: str | None = Field(serialization_alias="staff-id", default=None)
 
     @model_validator(mode="before")

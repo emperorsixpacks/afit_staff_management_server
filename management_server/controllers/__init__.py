@@ -1,1 +1,2 @@
 from management_server.controllers.UserControllers import UserController, AuthController
+from management_server.controllers.DeparmentControllers import DepartmentController

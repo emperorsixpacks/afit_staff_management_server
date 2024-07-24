@@ -1,11 +1,27 @@
-from fastapi import Request, Response
+from fastapi import Request, Response, status
 from fastapi.responses import JSONResponse
 
+from pydantic_core import ValidationError
 from management_server.exceptions.excptions import (
     InvalidCredentialsError,
     InvalidRequestError,
     ServerFailureError,
 )
+
+
+def _validation_error_handler(request: Request, exc: ValidationError) -> Response:
+    print(exc)
+
+    error = exc.errors()[0]
+    response = JSONResponse(
+        {
+            "message": "Invalid Type",
+            "location": f"{error['loc']}",
+            "type": f"{error['type']}",
+        },
+        status_code=status.HTTP_406_NOT_ACCEPTABLE,
+    )
+    return response
 
 
 def _invalid_request_error_handler(

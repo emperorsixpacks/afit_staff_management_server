@@ -42,7 +42,8 @@ class TimestampMixin:
 
 
 class BaseStaffModel(TimestampMixin, BaseModel):
-    staff_id = fields.CharField(max_length=13, primary_key=True)
+    id = fields.UUIDField(primary_key=True)
+    staff_id = fields.CharField(max_length=13)
     user: fields.OneToOneRelation["UserModel"] = fields.OneToOneField(
         model_name="models.UserModel", on_delete=fields.CASCADE
     )
@@ -61,19 +62,20 @@ class BaseStaffModel(TimestampMixin, BaseModel):
         Returns:
             The newly created instance.
         """
-        department: DepartmentModel = kwargs.get("department", None)
-        if department is None:
+        department_id: DepartmentModel = kwargs.get("department_id", None)
+        if department_id is None:
             raise ValueError("Department must be set")
-        department_short_name = await DepartmentModel.get_or_none(
-            department_id=department.department_id
-        ).short_name
+        department = await DepartmentModel.get_or_none(
+            department_id=department_id
+        )
+        department_short_name = department.short_name
         department_staff_count = (
             await StaffModel.filter(department=department).all().count() + 1
         )
         generated_staff_id = generate_staff_id(
             short_name=department_short_name, count=department_staff_count
         )
-        kwargs.update(("staff_id", generated_staff_id))
+        kwargs.update({"staff_id":generated_staff_id})
         instance = cls(**kwargs)
         await cls._create(instance, using_db=using_db)
         return instance
@@ -128,7 +130,6 @@ class UserModel(TimestampMixin, BaseModel):
         password = kwargs.get("password_hash", None)
         if password is None:
             password = generate_random_password()
-            print(password)
         kwargs.update({"password_hash": hash_password(password)})
         instance = cls(**kwargs)
         try:
@@ -143,7 +144,7 @@ class UserModel(TimestampMixin, BaseModel):
 class DepartmentModel(TimestampMixin, BaseModel):
 
     department_id = fields.UUIDField(primary_key=True)
-    name = fields.CharField(max_length=20, min_length=3, null=False, unique=True)
+    name = fields.CharField(max_length=50, min_length=3, null=False, unique=True)
     short_name = fields.CharField(max_length=3, min_length=3, null=False, unique=True)
     description = fields.TextField(null=False, max_length=255)
     department_head: fields.OneToOneNullableRelation["AdminModel"] = (
