@@ -17,7 +17,7 @@ from management_server.utils.validators import phone_number_vaidator
 class BaseSchema(BaseModel):
     model_config = ConfigDict(extra="ignore")
     created_at: Optional[datetime] = Field(serilization_alias="created-at", default=None)
-    updated_at: Optional[datetime] = Field(serilization_alias="updated-at", default=None)
+    modified_at: Optional[datetime] = Field(serilization_alias="updated-at", default=None)
 
     @model_validator(mode="before")
     def filter_extra_fields(cls, values):
@@ -80,8 +80,6 @@ class StaffSchema(BaseModel):
     def filter_extra_fields(cls, values):
         valid_fields = {field: values[field] for field in cls.model_fields if field in values}
         return valid_fields
-
-class AdminShema(BaseSchema): ...
 
 class Sessions(BaseSchema):
     name: str

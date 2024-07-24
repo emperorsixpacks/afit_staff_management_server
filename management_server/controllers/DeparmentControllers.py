@@ -22,7 +22,7 @@ class DepartmentController(BaseController):
             )
         return value
 
-    async def get_department(self, using_db=None) -> DepartmentModel | None:
+    async def get(self, using_db=None) -> DepartmentModel | None:
         department = await DepartmentModel.get_or_none(
             department_id=self.department_id, using_db=using_db
         )
@@ -48,6 +48,9 @@ class DepartmentController(BaseController):
             )
 
             return DepartmentSchema.model_validate(created_department.__dict__)
-
+        
+    async def exists(self) -> bool:
+        return await DepartmentModel.exists(department_id=self.department_id)
+    
     def __name__(self) -> str:
         return "Department"

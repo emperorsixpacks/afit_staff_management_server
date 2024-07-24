@@ -1,6 +1,6 @@
 from fastapi import APIRouter
 from management_server.schemas import UserSchema
-from management_server.controllers import UserController
+from management_server.controllers import StaffController
 
 router = APIRouter(prefix="/users", tags=["staff"])
 
@@ -9,9 +9,9 @@ router = APIRouter(prefix="/users", tags=["staff"])
     response_model=UserSchema,
 )
 async def get_staff(staff_id):
-    user_controller = UserController(user_id=staff_id)
-    user_from_db = await user_controller.get_user()
-    return user_from_db
+    staff_controller = StaffController(id=staff_id)
+    return  await staff_controller.get()
+   
 
 
 @router.put("/staff/{staff_id}")

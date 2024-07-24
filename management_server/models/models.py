@@ -6,7 +6,7 @@ from fastapi import status
 from tortoise import fields
 from tortoise.models import Model
 from tortoise.transactions import in_transaction
-from tortoise.exceptions import IntegrityError
+from tortoise.exceptions import IntegrityError, OperationalError
 
 
 from management_server.utils import (
@@ -14,7 +14,7 @@ from management_server.utils import (
     generate_random_password,
     generate_staff_id,
 )
-from management_server.exceptions import InvalidRequestError
+from management_server.exceptions import InvalidRequestError, ServerFailureError
 
 
 MODEL = TypeVar("MODEL")
@@ -62,23 +62,27 @@ class BaseStaffModel(TimestampMixin, BaseModel):
         Returns:
             The newly created instance.
         """
-        department_id: DepartmentModel = kwargs.get("department_id", None)
-        if department_id is None:
-            raise ValueError("Department must be set")
-        department = await DepartmentModel.get_or_none(
-            department_id=department_id
-        )
-        department_short_name = department.short_name
-        department_staff_count = (
-            await StaffModel.filter(department=department).all().count() + 1
-        )
-        generated_staff_id = generate_staff_id(
-            short_name=department_short_name, count=department_staff_count
-        )
-        kwargs.update({"staff_id":generated_staff_id})
-        instance = cls(**kwargs)
-        await cls._create(instance, using_db=using_db)
-        return instance
+        try:
+            department_id: DepartmentModel = kwargs.get("department_id", None)
+            if department_id is None:
+                raise ValueError("Department must be set")
+            department = await DepartmentModel.get_or_none(
+                department_id=department_id
+            )
+            department_short_name = department.short_name
+            department_staff_count = (
+                await StaffModel.filter(department=department).all().count() + 1
+            )
+            generated_staff_id = generate_staff_id(
+                short_name=department_short_name, count=department_staff_count
+            )
+            kwargs.update({"staff_id":generated_staff_id})
+            instance = cls(**kwargs)
+            await cls._create(instance, using_db=using_db)
+            return instance
+        except (AttributeError, OperationalError, IntegrityError) as e:
+            print(e)
+            raise ServerFailureError(detail="Could not create Staff") from e
 
 
 class UserModel(TimestampMixin, BaseModel):

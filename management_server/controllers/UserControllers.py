@@ -6,7 +6,7 @@ from pydantic import BaseModel, EmailStr, Field, model_validator, ConfigDict
 from tortoise.transactions import in_transaction
 
 from management_server.schemas import UserSchema, StaffSchema
-from management_server.models import UserModel, StaffModel
+from management_server.models import UserModel, StaffModel, AdminModel
 from management_server.controllers.DeparmentControllers import DepartmentController
 from management_server.utils import verify_password
 from management_server.exceptions import InvalidCredentialsError, InvalidRequestError
@@ -26,15 +26,15 @@ class UserController(BaseController):
             )
         return self
 
-    def __get_user_search_key(self) -> Dict[str, str]:
+    def __get_search_key(self) -> Dict[str, str]:
         return {
             key: value
             for key, value in self.model_dump(exclude_none=True).items()
             if value is not None and key in ["email", "user_id"]
         }
 
-    async def get_user(self):
-        user = await UserModel.get_or_none(**self.__get_user_search_key())
+    async def get(self):
+        user = await UserModel.get_or_none(**self.__get_search_key())
         return UserSchema.model_validate(user.__dict__) if user else None
 
     @classmethod
@@ -55,24 +55,84 @@ class UserController(BaseController):
             )
             department = await DepartmentController(
                 department_id=staff_schema.department_id
-            ).get_department(using_db=connection)
+            ).get(using_db=connection)
             if department is None:
                 raise InvalidRequestError(
                     detail=f"Invalid Department with id {staff_schema.department_id}",
                     status_code=status.HTTP_406_NOT_ACCEPTABLE,
                 )
             new_staff = await StaffModel.create(
-                user_id=created_user.user_id, department_id=department.department_id, using_db=connection
+                user_id=created_user.user_id,
+                department_id=department.department_id,
+                using_db=connection,
             )
-           
+
             return StaffSchema(
                 department_id=department.department_id,
                 staff_id=new_staff.staff_id,
                 user=UserSchema.model_validate(created_user.__dict__),
             )
 
+    async def exists(self) -> bool:
+        return await UserModel.exists(**self.__get_search_key())
+
     def __str__(self) -> str:
         return "User"
+
+
+class BaseStaffController(BaseController):
+    id: UUID | None = Field(default=None)
+    staff_id: str | None = Field(default=None)
+
+    @model_validator(mode="after")
+    def check_fileds(self) -> Self:
+        if self.id is None and self.staff_id is None:
+            raise ValueError(
+                "id and staff_id can not be None, pass atleast one argument for one"
+            )
+        return self
+
+    def __get_search_key(self) -> Dict[str, str]:
+        return {
+            key: value
+            for key, value in self.model_dump(exclude_none=True).items()
+            if value is not None and key in ["id", "staff_id"]
+        }
+
+
+class StaffController(BaseStaffController):
+
+    async def get(self):
+        user = await StaffModel.get_or_none(**self.__get_search_key())
+        return StaffSchema.model_validate(user.__dict__) if user else None
+
+    async def exists(self) -> bool:
+        return await StaffModel.exists(**self.__get_search_key())
+
+
+class AdminController(BaseStaffController):
+    id: UUID | None = Field(default=None)
+    staff_id: str | None = Field(default=None)
+
+    async def get(self):
+        user = await AdminModel.get_or_none(**self.__get_search_key())
+        return StaffSchema.model_validate(user.__dict__) if user else None
+
+    async def exists(self) -> bool:
+        return await AdminModel.exists(**self.__get_search_key())
+
+    @classmethod
+    async def _create(cls, form_data: Dict[str, str]) -> StaffSchema:
+        async with in_transaction() as connection:
+            if await UserController(user_id=form_data["user_id"]).exists():
+                raise InvalidRequestError("A user with this ID already exists")
+            created_admin = await AdminModel.create(**form_data, usin_db=connection)
+            user = await UserController(user_id=form_data["user_id"]).get()
+            return StaffSchema(
+                department_id=form_data["department_id"],
+                staff_id=created_admin.staff_id,
+                user=UserSchema.model_validate(user.__dict__),
+            )
 
 
 class AuthController(BaseModel):

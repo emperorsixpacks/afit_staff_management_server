@@ -1,4 +1,6 @@
+from uuid import UUID
 from dataclasses import dataclass
+
 from fastapi import Form
 
 
@@ -15,6 +17,13 @@ class StaffCreateForm:
     lga: str = Form(...)
     ward: str = Form(...)
     department_id: str = Form(serialization_alias="department-id")
+
+
+
+@dataclass
+class AdminCreateForm:
+    user_id: UUID = Form(serialization_alias="user-id")
+    department_id: UUID = Form(serialization_alias="department-id")
 
 
 
