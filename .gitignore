@@ -7,3 +7,7 @@ __pycache__/*
 demo.py
 poetry.lock
 tortoise.yml
+management_server.sqlite3-shm
+management_server.sqlite3-wal
+*.sqlite3
+*.sqlite3-*

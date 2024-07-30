@@ -86,13 +86,9 @@ class Sessions(BaseSchema):
     device_name:str
 
 class UserInCache(BaseModel):
-    user: UserSchema | Dict[str, str]
-    sessions: List[Sessions]
-
-    @field_serializer("user", when_used="json")
-    def serialize_user_field(user:UserSchema):
-        return user.model_dump_json()
+    staff: StaffSchema| Dict[str, str]
+    sessions: List[Sessions] | None = Field(default=None)
     
     @field_serializer("sessions", when_used="json")
     def serialize_sessions_field(sessions:List[Sessions]):
-        return [session.model_dump_json() for session in sessions]
+        return [session.model_dump_json() for session in sessions] if sessions else None

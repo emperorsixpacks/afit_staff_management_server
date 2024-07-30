@@ -2,15 +2,12 @@
 Redis Module
 """
 
-from typing import Union
+from typing import Self
 import coredis
-
-
-from fastapi import status
-from fastapi.responses import JSONResponse
 
 from management_server.schemas import UserInCache
 from management_server.settings import RedisSettings
+from management_server.exceptions import InvalidRequestError
 
 settings = RedisSettings()
 
@@ -33,10 +30,13 @@ class Redis:
     Redis class for interacting with Redis.
     """
 
-    def __init__(self) -> None:
-        self.user_id = None
+    def __init__(self, user_id: str) -> None:
+        self.user_id = user_id
 
-    async def async_init(self, user_id: str) -> bool | None:
+    def __await__(self) -> Self:
+        return self.async_init().__await__()
+
+    async def async_init(self) -> bool | None:
         """
         Asynchronously initializes the object with the given secret.
 
@@ -49,14 +49,13 @@ class Redis:
         Raises:
             InvalidCredentialsError: If the secret is invalid.
         """
-        exists = await redis_client.exists([user_id])
+        exists = await redis_client.exists([self.user_id])
         if exists != 1:
-            return None
-        self.user_id = user_id
-        return True
+            raise InvalidRequestError(detail="User not found in cache", status_code=404)
+        return self
 
     @staticmethod
-    async def create_key(key: str, data:UserInCache) -> bool:
+    async def create_key(key: str, data: UserInCache) -> bool:
         """
         Creates a key in Redis
 
@@ -67,7 +66,7 @@ class Redis:
         Returns:
             bool: Returns True if the key was successfully created and set to expire after the specified TTL, otherwise returns False.
         """
-        created_hash = await redis_client.hset(key, data.model_dump_json())
+        created_hash = await redis_client.set(key, data.model_dump_json())
 
         if created_hash == 0:
             return False

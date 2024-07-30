@@ -5,12 +5,13 @@ from fastapi import status
 from pydantic import BaseModel, EmailStr, Field, model_validator, ConfigDict
 from tortoise.transactions import in_transaction
 
-from management_server.schemas import UserSchema, StaffSchema
+from management_server.schemas import UserSchema, StaffSchema, UserInCache
 from management_server.models import UserModel, StaffModel, AdminModel
 from management_server.controllers.DeparmentControllers import DepartmentController
 from management_server.utils import verify_password
 from management_server.exceptions import InvalidCredentialsError, InvalidRequestError
 from management_server.controllers.base import BaseController
+from management_server.redis_cache import Redis
 
 
 class UserController(BaseController):
@@ -26,15 +27,17 @@ class UserController(BaseController):
             )
         return self
 
-    def __get_search_key(self) -> Dict[str, str]:
+    def _get_search_key(self) -> Dict[str, str]:
         return {
             key: value
             for key, value in self.model_dump(exclude_none=True).items()
             if value is not None and key in ["email", "user_id"]
         }
 
-    async def get(self):
-        user = await UserModel.get_or_none(**self.__get_search_key())
+    async def get(self, return_model: bool = False):
+        user = await UserModel.get_or_none(**self._get_search_key())
+        if return_model:
+            return user if user else None
         return UserSchema.model_validate(user.__dict__) if user else None
 
     @classmethod
@@ -67,14 +70,18 @@ class UserController(BaseController):
                 using_db=connection,
             )
 
-            return StaffSchema(
+            new_staff_schema = StaffSchema(
                 department_id=department.department_id,
                 staff_id=new_staff.staff_id,
                 user=UserSchema.model_validate(created_user.__dict__),
             )
+            user_in_cahce = UserInCache(staff=new_staff_schema)
+            await Redis.create_key(key=new_staff.staff_id, data=user_in_cahce)
+
+            return new_staff_schema
 
     async def exists(self) -> bool:
-        return await UserModel.exists(**self.__get_search_key())
+        return await UserModel.exists(**self._get_search_key())
 
     def __str__(self) -> str:
         return "User"
@@ -83,6 +90,7 @@ class UserController(BaseController):
 class BaseStaffController(BaseController):
     id: UUID | None = Field(default=None)
     staff_id: str | None = Field(default=None)
+    fields: Dict[str, str] | None = Field(default=None)
 
     @model_validator(mode="after")
     def check_fileds(self) -> Self:
@@ -92,22 +100,38 @@ class BaseStaffController(BaseController):
             )
         return self
 
-    def __get_search_key(self) -> Dict[str, str]:
+    def _get_search_key(self) -> Dict[str, str]:
         return {
             key: value
             for key, value in self.model_dump(exclude_none=True).items()
             if value is not None and key in ["id", "staff_id"]
         }
 
+    async def update(self):
+        if self.fields is None:
+            raise ValueError("Field cannnot be None")
+        if not await self.exists():
+            raise InvalidRequestError(
+                detail="Staff with this ID does not exist", status_code=404
+            )
+        staff = await self.get(return_model=True)
+        print(staff)
+        user = await UserController(email=staff.user.email).get(return_model=True)
+        updated_user = user.update_from_dict(self.fields)
+        return  UserSchema.model_validate(updated_user.__dict__)
+
+
 
 class StaffController(BaseStaffController):
 
-    async def get(self):
-        user = await StaffModel.get_or_none(**self.__get_search_key())
+    async def get(self, return_model: bool = False):
+        user = await StaffModel.get_or_none(**self._get_search_key())
+        if return_model:
+            return user if user else None
         return StaffSchema.model_validate(user.__dict__) if user else None
 
     async def exists(self) -> bool:
-        return await StaffModel.exists(**self.__get_search_key())
+        return await StaffModel.exists(**self._get_search_key())
 
 
 class AdminController(BaseStaffController):
@@ -115,11 +139,12 @@ class AdminController(BaseStaffController):
     staff_id: str | None = Field(default=None)
 
     async def get(self):
-        user = await AdminModel.get_or_none(**self.__get_search_key())
+        user = await AdminModel.get_or_none(**self._get_search_key())
         return StaffSchema.model_validate(user.__dict__) if user else None
 
     async def exists(self) -> bool:
-        return await AdminModel.exists(**self.__get_search_key())
+        print("pass")
+        return await AdminModel.exists(**self._get_search_key())
 
     @classmethod
     async def _create(cls, form_data: Dict[str, str]) -> StaffSchema:
@@ -144,3 +169,5 @@ class AuthController(BaseModel):
         if not verify_password(hash_user_password, self.password):
             raise InvalidCredentialsError(detail="Invalid email or password")
         return True
+
+    # async def login(self):

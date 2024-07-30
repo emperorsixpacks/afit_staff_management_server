@@ -1,4 +1,4 @@
-from typing import Dict
+from typing import Dict, Self
 from tortoise.exceptions import OperationalError
 from pydantic import BaseModel
 from management_server.exceptions import ServerFailureError
@@ -6,6 +6,9 @@ from management_server.exceptions import ServerFailureError
 
 class BaseController(BaseModel):
     
+    async def get(self, return_model: bool = False) -> Self:
+        ...
+
     @classmethod
     async def create(cls, form_data: Dict[str, str]):
         try:

@@ -163,7 +163,7 @@ class DepartmentModel(TimestampMixin, BaseModel):
 
 
 class StaffModel(BaseStaffModel):
-    department: fields.OneToOneRelation["DepartmentModel"] = fields.OneToOneField(
+    department: fields.ForeignKeyRelation["DepartmentModel"] = fields.ForeignKeyField(
         model_name="models.DepartmentModel", on_delete=fields.SET_NULL, null=True
     )
 

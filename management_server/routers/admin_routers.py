@@ -1,6 +1,6 @@
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, Query
+from fastapi import APIRouter, Depends
 from management_server.controllers import UserController, AdminController
 from management_server.schemas import StaffSchema
 from management_server.forms import StaffCreateForm, AdminCreateForm
@@ -10,7 +10,7 @@ router = APIRouter(prefix="/admin", tags=["staff"])
 
 @router.get(
     "/{admin_id}",
-    response_model=StaffSchema,
+    response_model_by_alias=StaffSchema,
     response_model_exclude=["updated_at"],
 )
 async def get_admin(admin_id):
@@ -20,7 +20,7 @@ async def get_admin(admin_id):
 
 @router.post(
     "/create-staff/",
-    response_model=StaffSchema,
+    response_model_by_alias=StaffSchema,
     response_model_exclude=["created_at", "updated_at"],
 )
 async def create_staff(
@@ -32,7 +32,7 @@ async def create_staff(
 
 @router.post(
     "/create-admin/",
-    response_model=StaffSchema,
+    response_model_by_alias=StaffSchema,
     response_model_exclude=["created_at", "updated_at"],
 )
 async def create_admin(form_data: Annotated[AdminCreateForm, Depends()]):
