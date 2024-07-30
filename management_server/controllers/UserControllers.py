@@ -115,9 +115,9 @@ class BaseStaffController(BaseController):
                 detail="Staff with this ID does not exist", status_code=404
             )
         staff = await self.get(return_model=True)
-        print(staff)
-        user = await UserController(email=staff.user.email).get(return_model=True)
+        user = await UserController(user_id=staff.user_id).get(return_model=True)
         updated_user = user.update_from_dict(self.fields)
+        await updated_user.save()
         return  UserSchema.model_validate(updated_user.__dict__)
 
 

@@ -5,7 +5,7 @@ from fastapi import APIRouter, Depends
 from management_server.controllers import DepartmentController
 from management_server.forms import DepartmentCreateForm
 
-router = APIRouter(prefix="/department")
+router = APIRouter(prefix="/department", tags=["department"])
 
 
 @router.post("/create/")
